@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import axios from "axios";
 import { Toaster, toast } from "sonner";
 import JoditEditor from "jodit-react";
@@ -10,34 +10,51 @@ const Home = () => {
   const [recipients, setRecipients] = useState([]);
   const [searchfilter, setSearchFilter] = useState("");
   const [processing, setProcessing] = useState(false);
-  const [rows, setRows] = useState([
-    {
-      email: "john@example.com",
-      company: "Example Corp",
-    },
-    {
-      email: "kotakkashyap2803@gmail.com",
-      company: " Quixilinx LLP",
-    },
-    { email: "jane@example.com", company: "Tech Ltd" },
-    {
-      email: "bob@example.com",
-      company: "Design Inc",
-    },
-    {
-      email: "alice@example.com",
-      company: "Solutions LLC",
-    },
-    {
-      email: "jayrajb95@gmail.com",
-      company: "Quixilinx LLP",
-    },
-  ]);
+  const [rows, setRows] = useState([]);
+  const [mails, setMails] = useState(null);
+  const [files, setFiles] = useState([]);
+  // [
+    //   {
+    //     email: "john@example.com",
+    //     company: "Example Corp",
+    //   },
+    //   {
+    //     email: "kotakkashyap2803@gmail.com",
+    //     company: " Quixilinx LLP",
+    //   },
+    //   { email: "jane@example.com", company: "Tech Ltd" },
+    //   {
+    //     email: "bob@example.com",
+    //     company: "Design Inc",
+    //   },
+    //   {
+    //     email: "alice@example.com",
+    //     company: "Solutions LLC",
+    //   },
+    //   {
+    //     email: "jayrajb95@gmail.com",
+    //     company: "Quixilinx LLP",
+    //   },
+    // ]
 
-  const config = {
-    readonly: false, // all options from https://xdsoft.net/jodit/docs/,
-    placeholder: "Start typings...",
+  useEffect(() => {
+    const getMailsFromServer = async () => {
+      const mailsRes = await axios.get("http://localhost:4123/getMails");
+      setMails(mailsRes.data);
+    }
+    getMailsFromServer();
+  },[]);
+
+  const handleFileChange = (event) => {
+    // var file_array = files;
+    // file_array.push(event.target.files);
+    setFiles(event.target.files);
   };
+
+  // const config = {
+  //   readonly: false, // all options from https://xdsoft.net/jodit/docs/,
+  //   placeholder: "Start typings...",
+  // };
 
   const handlesend = async (e) => {
     try {
@@ -45,14 +62,31 @@ const Home = () => {
         toast.error("No Email Selected");
       }
       setProcessing(true);
-      const res = await axios.post("http://localhost:4123/send", {
-        ["recipients"]: recipients,
+      
+      const formData = new FormData();
+
+      console.log(recipients);
+      
+      recipients.forEach((recipient) => {
+        formData.append('recipients[]', recipient);
+      });
+      formData.append('mailContent', editorContent); // Add mailContent field
+
+      for (let i = 0; i < files.length; i++) {
+        formData.append('files', files[i]); // Append each file with the same key "files"
+      }
+
+      console.log(files);
+      
+      const res = await axios.post('http://localhost:4123/send', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data', // Ensure the content type is set
+        },
       });
       // console.log("res", res.data);
       setProcessing(false);
       toast.success(res.data.message);
     } catch (error) {
-      console.log("error", error);
       setProcessing(false);
       if (error.code == 400) {
         toast.error("No Email Chosen");
@@ -69,24 +103,22 @@ const Home = () => {
     );
   };
 
-  const filteredEmails = rows.filter((row) =>
-    row.email.toLowerCase().includes(searchfilter.toLowerCase())
+  const filteredEmails = mails && mails.filter((row) =>
+    row.company_email_prim.toLowerCase().includes(searchfilter.toLowerCase())
   );
-
-  console.log("recipients", Array.isArray(recipients));
 
   return (
     <>
       {processing && (
         <div className="absolute z-10 inset-0 bg-slate-300 opacity-50 flex flex-col items-center justify-center">
           <p className="text-xl">Please wait...</p>
-          <div class="loader">
-            <div class="loader__bar"></div>
-            <div class="loader__bar"></div>
-            <div class="loader__bar"></div>
-            <div class="loader__bar"></div>
-            <div class="loader__bar"></div>
-            <div class="loader__ball"></div>
+          <div className="loader">
+            <div className="loader__bar"></div>
+            <div className="loader__bar"></div>
+            <div className="loader__bar"></div>
+            <div className="loader__bar"></div>
+            <div className="loader__bar"></div>
+            <div className="loader__ball"></div>
           </div>
         </div>
       )}
@@ -113,15 +145,19 @@ const Home = () => {
       {tab == "draft" && (
         <div className="relative top-[10vh] min-h-screen max-w-[90%] md:max-w-[75%] w-full mx-auto">
           <header className="flex my-2 justify-between p-5">
-            <h1 className=" font-medium text-xl md:text-3xl">Email Deaft</h1>
+            <h1 className=" font-medium text-xl md:text-3xl">Email Draft</h1>
           </header>
           <JoditEditor
             ref={editor}
             value={editorContent}
-            config={config}
+            // config={config}
             tabIndex={1} // tabIndex of textarea
             onChange={(newContent) => setEditorContent(newContent)} // preferred to use only this option to update the content for performance reasons
           />
+          {/* <form onSubmit={handleFileChange}> */}
+            <input type="file" multiple onChange={handleFileChange} />
+            {/* <button type="submit">Upload</button> */}
+          {/* </form> */}
           {/* <div className="email-editor-container">
             <div className="content-preview">
               <h3>Preview</h3>
@@ -196,11 +232,11 @@ const Home = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredEmails.map((row, index) => (
+                {filteredEmails && filteredEmails.map((row, index) => (
                   <tr
                     key={index}
                     className={`${
-                      recipients.includes(row.email)
+                      recipients.includes(row.company_email_prim)
                         ? "bg-slate-200"
                         : "bg-white"
                     } border-b`}
@@ -209,14 +245,14 @@ const Home = () => {
                       <input
                         type="checkbox"
                         disabled={processing == true}
-                        checked={recipients.includes(row.email)}
-                        onChange={() => toggleSelect(row.email)}
+                        checked={recipients.includes(row.company_email_prim)}
+                        onChange={() => toggleSelect(row.company_email_prim)}
                         className="disabled:cursor-not-allowed h-4 w-4"
                       />
                     </td>
-                    <td className="px-4 py-2 ">{row.email}</td>
+                    <td className="px-4 py-2 ">{row.company_email_prim}</td>
                     <td className="px-4 py-2 whitespace-nowrap text-right">
-                      {row.company}
+                      {row.company_name}
                     </td>
                   </tr>
                 ))}
