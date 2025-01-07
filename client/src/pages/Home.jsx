@@ -2,16 +2,58 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import axios from "axios";
 import { Toaster, toast } from "sonner";
 import JoditEditor from "jodit-react";
+import {
+  FileUploader,
+  FileInput,
+  FileUploaderContent,
+  FileUploaderItem,
+} from "../utils/file-upload";
+
+const FileSvgDraw = () => {
+  return (
+    <>
+      <svg
+        className="w-8 h-8 mb-3 text-primary"
+        aria-hidden="true"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 20 16"
+      >
+        <path
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+          d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
+        />
+      </svg>
+      <p className="mb-1 text-sm text-primary">
+        <span className="font-semibold">Click to upload</span>
+        &nbsp; or drag and drop
+      </p>
+      <p className="text-xs text-primary">SVG, PNG, JPG or GIF</p>
+    </>
+  );
+};
+
+const dropzone = {
+  accept: {
+    "image/*": [".jpg", ".jpeg", ".png", ".gif"],
+  },
+  multiple: true,
+  maxFiles: 4,
+  maxSize: 1 * 1024 * 1024,
+};
 
 const Home = () => {
   const editor = useRef(null);
-  const [tab, setTab] = useState("draft");
   const [editorContent, setEditorContent] = useState("");
   const [recipients, setRecipients] = useState([]);
   const [searchfilter, setSearchFilter] = useState("");
   const [processing, setProcessing] = useState(false);
   const [mails, setMails] = useState(null);
   const [files, setFiles] = useState(null);
+  const [subject, setSubject] = useState("");
   // [
     //   {
     //     email: "john@example.com",
@@ -40,9 +82,9 @@ const Home = () => {
     const getMailsFromServer = async () => {
       const mailsRes = await axios.get("http://localhost:4123/getMails");
       setMails(mailsRes.data);
-    }
+    };
     getMailsFromServer();
-  },[]);
+  }, []);
 
   const onFileChange = (event) => {
     // Update the state
@@ -60,11 +102,11 @@ const Home = () => {
         toast.error("No Email Selected");
       }
       setProcessing(true);
-      
+
       const formData = new FormData();
       
       recipients.forEach((recipient) => {
-        formData.append('recipients[]', recipient);
+        formData.append("recipients[]", recipient);
       });
 
       formData.append('mailContent', editorContent); // Add mailContent field
@@ -75,9 +117,11 @@ const Home = () => {
         files.name
       );
 
+      formData.append("subject", subject);
+
       const res = await axios.post('http://localhost:4123/send', formData, {
         headers: {
-          'Content-Type': 'multipart/form-data', // Ensure the content type is set
+          "Content-Type": "multipart/form-data", // Ensure the content type is set
         },
       });
       // console.log("res", res.data);
@@ -100,9 +144,11 @@ const Home = () => {
     );
   };
 
-  const filteredEmails = mails && mails.filter((row) =>
-    row.company_email_prim.toLowerCase().includes(searchfilter.toLowerCase())
-  );
+  const filteredEmails =
+    mails &&
+    mails.filter((row) =>
+      row.company_email_prim.toLowerCase().includes(searchfilter.toLowerCase())
+    );
 
   return (
     <>
@@ -119,31 +165,20 @@ const Home = () => {
           </div>
         </div>
       )}
-
-      <nav className="flex text-center gap-6" aria-label="Tabs">
-        <button
-          onClick={() => setTab("draft")}
-          className={`shrink-0 rounded-lg p-2 text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-700 ${
-            tab == "draft" && "border-b-2 border-blue-500"
-          }`}
-        >
-          Draft
-        </button>
-        <button
-          onClick={() => setTab("to")}
-          className={`shrink-0 rounded-lg p-2 text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-700 ${
-            tab == "to" && "border-b-2 border-blue-500"
-          }`}
-        >
-          Senders
-        </button>
-      </nav>
-
-      {tab == "draft" && (
-        <div className="relative top-[10vh] min-h-screen max-w-[90%] md:max-w-[75%] w-full mx-auto">
+      <div className="flex p-5 justify-between w-[100%]">
+        {/* Email Draft Section */}
+        <div className="relative p-5 shadow-lg border-2 border-gray-200 rounded-lg top-[10vh] h-fit max-h-auto w-[60%]">
           <header className="flex my-2 justify-between p-5">
             <h1 className=" font-medium text-xl md:text-3xl">Email Draft</h1>
           </header>
+          <input
+            type="text"
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            required
+            placeholder="Enter the Subject"
+            className="border-2 border-gray-200 rounded-lg px-4 py-2 w-full my-4"
+          />
           <JoditEditor
             ref={editor}
             value={editorContent}
@@ -160,11 +195,41 @@ const Home = () => {
               <div dangerouslySetInnerHTML={{ __html: editorContent }} />
             </div>
           </div> */}
+          <FileUploader
+            value={files}
+            orientation="vertical"
+            onValueChange={setFiles}
+            dropzoneOptions={dropzone}
+            className="relative rounded-lg p-2 w-full mx-auto"
+          >
+            <FileInput className="outline-dashed bg-background outline-2 outline-primary/40">
+              <div className="flex items-center justify-center flex-col pt-3 pb-4 w-full ">
+                <FileSvgDraw />
+              </div>
+            </FileInput>
+            <FileUploaderContent className="flex items-center flex-row gap-2">
+              {files?.map((file, i) => (
+                <FileUploaderItem
+                  key={i}
+                  index={i}
+                  className="size-20 p-0 rounded-md overflow-hidden border"
+                  aria-roledescription={`file ${i + 1} containing ${file.name}`}
+                >
+                  <img
+                    src={URL.createObjectURL(file)}
+                    alt={file.name}
+                    height={80}
+                    width={80}
+                    className="size-20 rounded-md object-cover bg-primary"
+                  />
+                </FileUploaderItem>
+              ))}
+            </FileUploaderContent>
+          </FileUploader>
         </div>
-      )}
 
-      {tab == "to" && (
-        <div className="relative top-[10vh] min-h-screen max-w-[90%] md:max-w-[75%] w-full mx-auto">
+        {/* Sender email section */}
+        <div className="relative h-fit max-h-[85vh] overflow-y-scroll shadow-lg border-2 border-gray-200 rounded-lg p-5 top-[10vh] m-5 w-[35%]">
           <Toaster richColors position="top-center" />
           <header className="flex my-2 justify-between p-5">
             <h1 className=" font-medium text-xl md:text-3xl">List of Emails</h1>
@@ -228,35 +293,36 @@ const Home = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredEmails && filteredEmails.map((row, index) => (
-                  <tr
-                    key={index}
-                    className={`${
-                      recipients.includes(row.company_email_prim)
-                        ? "bg-slate-200"
-                        : "bg-white"
-                    } border-b`}
-                  >
-                    <td className="px-4 py-2">
-                      <input
-                        type="checkbox"
-                        disabled={processing == true}
-                        checked={recipients.includes(row.company_email_prim)}
-                        onChange={() => toggleSelect(row.company_email_prim)}
-                        className="disabled:cursor-not-allowed h-4 w-4"
-                      />
-                    </td>
-                    <td className="px-4 py-2 ">{row.company_email_prim}</td>
-                    <td className="px-4 py-2 whitespace-nowrap text-right">
-                      {row.company_name}
-                    </td>
-                  </tr>
-                ))}
+                {filteredEmails &&
+                  filteredEmails.map((row, index) => (
+                    <tr
+                      key={index}
+                      className={`${
+                        recipients.includes(row.company_email_prim)
+                          ? "bg-slate-200"
+                          : "bg-white"
+                      } border-b`}
+                    >
+                      <td className="px-4 py-2">
+                        <input
+                          type="checkbox"
+                          disabled={processing == true}
+                          checked={recipients.includes(row.company_email_prim)}
+                          onChange={() => toggleSelect(row.company_email_prim)}
+                          className="disabled:cursor-not-allowed h-4 w-4"
+                        />
+                      </td>
+                      <td className="px-4 py-2 ">{row.company_email_prim}</td>
+                      <td className="px-4 py-2 whitespace-nowrap text-right">
+                        {row.company_name}
+                      </td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
           </div>
         </div>
-      )}
+      </div>
     </>
   );
 };

@@ -106,7 +106,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'filestorage')));
 
 app.post("/send", upload.single('attachment'), (req, res) => {
   try {
-    const { recipients, mailContent } = req.body;
+    const { recipients, mailContent, subject } = req.body;
 
     if (!Array.isArray(recipients) || recipients.length === 0) {
       return res.status(400).json({ message: "Recipients list must be a non-empty array." });
@@ -115,7 +115,7 @@ app.post("/send", upload.single('attachment'), (req, res) => {
     const mailOptions = {
       from: '"Jayraj" <jayrajb95@gmail.com>',
       to: recipients.join(","),
-      subject: "Welcome to Our Service",
+      subject: subject,
       html: mailContent || "<p>Default email content</p>", // Ensure emailTemplate is defined
       attachments: req.file,
     };
