@@ -81,81 +81,43 @@ const emailTemplate = () => `
 </html>
 `;
 
-const upload = multer({ dest: 'uploads/' });
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
-app.post("/send", upload.array('files', 10), (req, res) => {
-  try {
-    // const { recipients, mailContent } = req.body;
-    // console.log("recipients", req);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
-    // if (!recipients || !recipients.length) {
-    //   return res.status(400).json({ message: "Recipients list is required." });
-    // }
-
-    // if (!req.files || req.files.length === 0) {
-    //   return res.status(400).json({ message: 'No files uploaded.' });
-    // }
-
-    // const __filename = fileURLToPath(import.meta.url);
-    // const __dirname = path.dirname(__filename);
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+      cb(null, "uploads");
+  },
   
-    // const uploadedFiles = req.files.map((file) => ({
-    //     originalName: file.originalname,
-    //     path: path.join(__dirname, 'uploads', file.filename),
-    //     size: file.size,
-    //   }));
+  filename: function (req, file, cb) {
+    let setFilename = file.originalname.split(".")
+    let setFileExtension = setFilename[1];
+    setFilename = setFilename[0];
+    cb(null, setFilename + "-" + Date.now() + "." + setFileExtension);
+  }
+});
 
-    // const mailOptions = {
-    //   from: '"Jayraj" <jayrajb95@gmail.com>',
-    //   to: recipients.join(","),
-    //   subject: "Welcome to Our Service",
-    //   html: mailContent,
-    //   attachments: uploadedFiles,
-    // };
+const upload = multer({ storage });
 
-    // transporter.sendMail(mailOptions, (error, info) => {
-    //   if (error) {
-    //     console.error("Error sending email:", error);
-    //     return res.status(500).send({ message: "Error sending email", error });
-    //   }
-    //   console.log("Email sent:", info.response);
-    //   return res.status(200).send({ message: "Email sent successfully!" });
-    // });
+app.use('/uploads', express.static(path.join(__dirname, 'filestorage')));
 
+app.post("/send", upload.single('attachment'), (req, res) => {
+  try {
     const { recipients, mailContent } = req.body;
-    console.log("req.body:", req.body);
-    console.log("recipients:", recipients);
 
     if (!Array.isArray(recipients) || recipients.length === 0) {
       return res.status(400).json({ message: "Recipients list must be a non-empty array." });
     }
 
-    if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ message: "No files uploaded." });
-    }
-
-    const __filename = fileURLToPath(import.meta.url);
-    const __dirname = path.dirname(__filename);
-
-    const uploadedFiles = req.files.map((file) => ({
-      originalName: file.originalname,
-      path: path.join(__dirname, 'uploads', file.filename),
-      size: file.size,
-      mimetype: file.mimetype
-    }));
-
-    console.log(req.files);
-
-    var finalMailContent = mailContent + uploadedFiles
-    .map(file => `<img src="cid:${file.cid}" alt="Uploaded Image" style="max-width: 100%; height: auto;" />`)
-    .join("<br/>");
-
     const mailOptions = {
       from: '"Jayraj" <jayrajb95@gmail.com>',
       to: recipients.join(","),
       subject: "Welcome to Our Service",
-      html: finalMailContent || "<p>Default email content</p>", // Ensure emailTemplate is defined
-      attachments: uploadedFiles,
+      html: mailContent || "<p>Default email content</p>", // Ensure emailTemplate is defined
+      attachments: req.file,
     };
 
     transporter.sendMail(mailOptions, (error, info) => {
@@ -177,7 +139,7 @@ app.get("/", (req, res) => {
 });
 
 import mysql from 'mysql2';
-import { fileURLToPath } from "url";
+// import { fileURLToPath } from "url";
 
 app.get("/getMails", (req, res) => {
   const connection = mysql.createConnection({

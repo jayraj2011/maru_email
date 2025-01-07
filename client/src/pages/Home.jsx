@@ -10,9 +10,8 @@ const Home = () => {
   const [recipients, setRecipients] = useState([]);
   const [searchfilter, setSearchFilter] = useState("");
   const [processing, setProcessing] = useState(false);
-  const [rows, setRows] = useState([]);
   const [mails, setMails] = useState(null);
-  const [files, setFiles] = useState([]);
+  const [files, setFiles] = useState(null);
   // [
     //   {
     //     email: "john@example.com",
@@ -45,10 +44,9 @@ const Home = () => {
     getMailsFromServer();
   },[]);
 
-  const handleFileChange = (event) => {
-    // var file_array = files;
-    // file_array.push(event.target.files);
-    setFiles(event.target.files);
+  const onFileChange = (event) => {
+    // Update the state
+    setFiles(event.target.files[0])
   };
 
   // const config = {
@@ -64,20 +62,19 @@ const Home = () => {
       setProcessing(true);
       
       const formData = new FormData();
-
-      console.log(recipients);
       
       recipients.forEach((recipient) => {
         formData.append('recipients[]', recipient);
       });
+
       formData.append('mailContent', editorContent); // Add mailContent field
 
-      for (let i = 0; i < files.length; i++) {
-        formData.append('files', files[i]); // Append each file with the same key "files"
-      }
+      formData.append(
+        "attachment",
+        files,
+        files.name
+      );
 
-      console.log(files);
-      
       const res = await axios.post('http://localhost:4123/send', formData, {
         headers: {
           'Content-Type': 'multipart/form-data', // Ensure the content type is set
@@ -154,10 +151,9 @@ const Home = () => {
             tabIndex={1} // tabIndex of textarea
             onChange={(newContent) => setEditorContent(newContent)} // preferred to use only this option to update the content for performance reasons
           />
-          {/* <form onSubmit={handleFileChange}> */}
-            <input type="file" multiple onChange={handleFileChange} />
-            {/* <button type="submit">Upload</button> */}
-          {/* </form> */}
+          <div className="mt-4">
+            <input type="file" onChange={onFileChange} />
+          </div>
           {/* <div className="email-editor-container">
             <div className="content-preview">
               <h3>Preview</h3>
