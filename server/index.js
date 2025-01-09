@@ -176,6 +176,117 @@ app.get("/getMails", (req, res) => {
   });
 })
 
+app.get("/mails", (req, res) => {
+  const connection = mysql.createConnection({
+    host: 'localhost',
+    user: 'root',
+    password: '',
+    database: 'email_db'
+  });
+  
+  // Connect to the database
+  connection.connect((err) => {
+    if (err) {
+      console.error('Error connecting to the database:', err.message);
+    } else {
+      console.log('Connected to the MySQL database.');
+    }
+  });
+
+  var query = "SELECT * FROM company AS company, (SELECT company_id, GROUP_CONCAT(company_email) AS email_ids FROM client_info GROUP BY company_id) AS company_email_ids WHERE company.id=company_email_ids.company_id"
+
+  connection.query(query, (err, results) => {
+    if (err) {
+      console.error('Error executing query:', err.message);
+      return;
+    }
+    res.status(200).json(results);
+  });
+  
+  // Close the connection
+  connection.end((err) => {
+    if (err) {
+      console.error('Error closing the connection:', err.message);
+      return;
+    }
+    console.log('Database connection closed.');
+  });
+})
+
+app.post("/email", (req, res) => {
+  const connection = mysql.createConnection({
+    host: 'localhost',
+    user: 'root',
+    password: '',
+    database: 'email_db'
+  });
+  
+  // Connect to the database
+  connection.connect((err) => {
+    if (err) {
+      console.error('Error connecting to the database:', err.message);
+    } else {
+      console.log('Connected to the MySQL database.');
+    }
+  });
+
+  const {company_id, company_email} = req.body;
+
+  connection.query('INSERT INTO client_info (company_id, company_email) VALUES (?, ?)', [company_id, company_email], (err, results) => {
+    if (err) {
+      console.error('Error executing query:', err.message);
+      return;
+    }
+    res.status(200).json(results);
+  });
+  
+  // Close the connection
+  connection.end((err) => {
+    if (err) {
+      console.error('Error closing the connection:', err.message);
+      return;
+    }
+    console.log('Database connection closed.');
+  });
+})
+
+app.delete("/email", (req, res) => {
+  const connection = mysql.createConnection({
+    host: 'localhost',
+    user: 'root',
+    password: '',
+    database: 'email_db'
+  });
+  
+  // Connect to the database
+  connection.connect((err) => {
+    if (err) {
+      console.error('Error connecting to the database:', err.message);
+    } else {
+      console.log('Connected to the MySQL database.');
+    }
+  });
+
+  const {id} = req.body;
+
+  connection.query('DELETE FROM client_info WHERE id=?', [id], (err, results) => {
+    if (err) {
+      console.error('Error executing query:', err.message);
+      return;
+    }
+    res.status(200).json(results);
+  });
+  
+  // Close the connection
+  connection.end((err) => {
+    if (err) {
+      console.error('Error closing the connection:', err.message);
+      return;
+    }
+    console.log('Database connection closed.');
+  });
+})
+
 app.listen(4123, () => {
   console.log("server is running");
 });
