@@ -49,6 +49,7 @@ export const FileUploader = forwardRef(
       accept = {
         "image/*": [".jpg", ".jpeg", ".png", ".gif"],
         "video/*": [".mp4", ".MOV", ".AVI"],
+        "aplication/*": [".pdf"]
       },
       maxFiles = 1,
       maxSize = 4 * 1024 * 1024,

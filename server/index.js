@@ -104,7 +104,7 @@ const upload = multer({ storage });
 
 app.use('/uploads', express.static(path.join(__dirname, 'filestorage')));
 
-app.post("/send", upload.single('attachment'), (req, res) => {
+app.post("/send", upload.array('attachment', 5), (req, res) => {
   try {
     const { recipients, mailContent, subject } = req.body;
 
@@ -117,7 +117,7 @@ app.post("/send", upload.single('attachment'), (req, res) => {
       to: recipients.join(","),
       subject: subject,
       html: mailContent || "<p>Default email content</p>", // Ensure emailTemplate is defined
-      attachments: req.file,
+      attachments: req.files,
     };
 
     transporter.sendMail(mailOptions, (error, info) => {

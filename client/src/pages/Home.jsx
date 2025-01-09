@@ -39,10 +39,11 @@ const FileSvgDraw = () => {
 const dropzone = {
   accept: {
     "image/*": [".jpg", ".jpeg", ".png", ".gif"],
+    "application/*": [".pdf"],
   },
   multiple: true,
   maxFiles: 4,
-  maxSize: 1 * 1024 * 1024,
+  maxSize: 15 * 1024 * 1024,
 };
 
 const Home = () => {
@@ -86,10 +87,10 @@ const Home = () => {
     getMailsFromServer();
   }, []);
 
-  const onFileChange = (event) => {
-    // Update the state
-    setFiles(event.target.files[0])
-  };
+  // const onFileChange = (event) => {
+  //   // Update the state
+  //   setFiles(event.target.files[0])
+  // };
 
   // const config = {
   //   readonly: false, // all options from https://xdsoft.net/jodit/docs/,
@@ -111,11 +112,13 @@ const Home = () => {
 
       formData.append('mailContent', editorContent); // Add mailContent field
 
-      formData.append(
-        "attachment",
-        files,
-        files.name
-      );
+      for (let file of files) {
+        formData.append(
+          "attachment",
+          file,
+          file.name
+        );
+      }
 
       formData.append("subject", subject);
 
@@ -186,9 +189,9 @@ const Home = () => {
             tabIndex={1} // tabIndex of textarea
             onChange={(newContent) => setEditorContent(newContent)} // preferred to use only this option to update the content for performance reasons
           />
-          <div className="mt-4">
+          {/* <div className="mt-4">
             <input type="file" onChange={onFileChange} />
-          </div>
+          </div> */}
           {/* <div className="email-editor-container">
             <div className="content-preview">
               <h3>Preview</h3>
