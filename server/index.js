@@ -176,7 +176,19 @@ app.get("/getMails", (req, res) => {
   });
 })
 
-app.get("/mails", (req, res) => {
+function queryDatabase(connection, query, params = []) {
+  return new Promise((resolve, reject) => {
+    connection.query(query, params, (err, results) => {
+      if (err) {
+        reject(err); // Reject the promise if there is an error
+      } else {
+        resolve(results); // Resolve the promise with the results
+      }
+    });
+  });
+}
+
+app.get("/mails", async (req, res) => {
   const connection = mysql.createConnection({
     host: 'localhost',
     user: 'root',
@@ -193,7 +205,65 @@ app.get("/mails", (req, res) => {
     }
   });
 
-  var query = "SELECT * FROM company AS company, (SELECT company_id, GROUP_CONCAT(company_email) AS email_ids FROM client_info GROUP BY company_id) AS company_email_ids WHERE company.id=company_email_ids.company_id"
+  var query = "SELECT * FROM company";
+
+  const query_result = [];
+
+  try {
+    // Execute the first query (SELECT * FROM company)
+    const companies = await queryDatabase(connection, query);
+
+    // For each company, execute a sub-query to fetch client info
+    for (let company of companies) {
+      const new_query = "SELECT * FROM client_info WHERE company_id=?";
+      const client_info = await queryDatabase(connection, new_query, [company.id]);
+
+      const individual_company = {
+        id: company.id,
+        company_name: company.company_name,
+        email_ids: client_info
+      };
+
+      query_result.push(individual_company);
+    }
+
+    // Send the result as JSON
+    res.status(200).json(query_result);
+  } catch (error) {
+    console.error('Error during query execution:', error.message);
+    res.status(500).json({ message: 'Error processing request' });
+  } finally {
+    // Close the connection after all queries are complete
+    connection.end((err) => {
+      if (err) {
+        console.error('Error closing the connection:', err.message);
+      } else {
+        console.log('Database connection closed.');
+      }
+    });
+  }
+
+
+})
+
+app.get("/company", (req, res) => {
+  const connection = mysql.createConnection({
+    host: 'localhost',
+    user: 'root',
+    password: '',
+    database: 'email_db'
+  });
+  
+  // Connect to the database
+  connection.connect((err) => {
+    if (err) {
+      console.error('Error connecting to the database:', err.message);
+    } else {
+      console.log('Connected to the MySQL database.');
+    }
+  });
+
+  var query = "SELECT * FROM company";
 
   connection.query(query, (err, results) => {
     if (err) {
