@@ -34,7 +34,7 @@ const FileSvgDraw = () => {
         <span className="font-semibold">Click to upload</span>
         &nbsp; or drag and drop
       </p>
-      <p className="text-xs text-primary">SVG, PNG, JPG or GIF</p>
+      <p className="text-xs text-primary">SVG, PNG, JPG , GIF or PDF</p>
     </>
   );
 };
@@ -82,36 +82,63 @@ const Home = () => {
 
   const modules = {
     toolbar: [
-      [{ size: [] }], // Font size
+      // Alignment options
+      [{ align: [] }],
+
+      // Font size and font family
+      [{ size: ["small", false, "large", "huge"] }],
       [{ font: [] }],
-      ["strike", "blockquote"],
-      ["link"], // Link
-      ["bold", "italic", "underline"], // Text styling
-      [{ align: [] }], // Text alignment
-      [
-        { list: "ordered" },
-        { list: "bullet" },
-        { indent: "-1" },
-        { indent: "+1" },
-      ],
+
+      // Text formatting options
+      ["bold", "italic", "underline", "strike"],
+
+      // Blockquote
+      ["blockquote"],
+
+      // Lists and indentation
+      [{ list: "ordered" }, { list: "bullet" }],
+      [{ indent: "-1" }, { indent: "+1" }],
+
+      // Background and text colors
+      [{ color: [] }, { background: [] }],
+
+      // Code block
+      ["code-block"],
+
+      // Additional options (optional)
+      ["clean"], // Removes formatting
     ],
   };
 
   // Allowed formats: Include font size, underline, and link
   const formats = [
-    "size", // Font size
-    "bold",
-    "script",
-    "indent",
-    "blockquote",
-    "code-block",
-    "italic",
-    "underline", // Text styling
-    "link", // Link
+    // Alignment
+    "align",
+
+    // Font size and font family
+    "size",
     "font",
+
+    // Text formatting
+    "bold",
+    "italic",
+    "underline",
+    "strike",
+
+    // Blockquote
+    "blockquote",
+
+    // Lists and indentation
     "list",
-    "bullet", // Bullet lists
-    "align", // Text alignment
+    "bullet",
+    "indent",
+
+    // Background and text colors
+    "color",
+    "background",
+
+    // Code block
+    "code-block",
   ];
 
   const onFileChange = (event) => {
@@ -568,6 +595,7 @@ const Home = () => {
                           >
                             <td className="px-4 py-2">
                               <input
+                                id={i}
                                 type="checkbox"
                                 disabled={processing == true}
                                 checked={recipients.includes(ids.company_email)}
@@ -580,11 +608,11 @@ const Home = () => {
                                       : [...prev, ids.company_email]
                                   )
                                 }
-                                className="disabled:cursor-not-allowed h-4 w-4 ml-[1rem]"
+                                className="disabled:cursor-not-allowed h-4 w-4 ml-[1.5rem]"
                               />
                             </td>
                             <td className="px-4 py-2 whitespace-nowrap text-left text-xs">
-                              {ids.company_email}
+                              <label htmlFor={i}>{ids.company_email}</label>
                             </td>
                           </tr>
                         ))}

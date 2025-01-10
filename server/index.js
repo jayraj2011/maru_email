@@ -47,11 +47,73 @@ const upload = multer({ storage });
 app.use("/uploads", express.static(path.join(__dirname, "filestorage")));
 
 const quillStyles = `
+  /* Alignment */
   .ql-align-right { text-align: right; }
   .ql-align-center { text-align: center; }
+  .ql-align-justify { text-align: justify; }
+  .ql-align-left { text-align: left; }
+
+  /* Font Size */
   .ql-size-small { font-size: 0.75em; }
   .ql-size-large { font-size: 1.5em; }
   .ql-size-huge { font-size: 2.5em; }
+
+  /* Font Style */
+  .ql-font-monospace { font-family: monospace; }
+  .ql-font-serif { font-family: serif; }
+  .ql-font-sans-serif { font-family: sans-serif; }
+
+  /* Blockquote */
+  blockquote { 
+    border-left: 4px solid #ccc; 
+    margin: 0; 
+    padding-left: 1em; 
+    color: #666;
+    font-style: italic; 
+  }
+
+  /* Text Decoration */
+  .ql-strike { text-decoration: line-through; }
+  .ql-underline { text-decoration: underline; }
+  .ql-bold { font-weight: bold; }
+  .ql-italic { font-style: italic; }
+
+  /* Indent */
+  .ql-indent-1 { padding-left: 3em; }
+  .ql-indent-2 { padding-left: 6em; }
+  .ql-indent-3 { padding-left: 9em; }
+  .ql-indent-4 { padding-left: 12em; }
+
+  /* List */
+  .ql-list-ordered { list-style-type: decimal; }
+  .ql-list-bullet { list-style-type: disc; }
+  .ql-list-item { margin-left: 1.5em; }
+
+  /* Background Color */
+  .ql-background-yellow { background-color: yellow; }
+  .ql-background-green { background-color: green; }
+  .ql-background-blue { background-color: blue; }
+  .ql-background-red { background-color: red; }
+
+  /* Text Color */
+  .ql-color-red { color: red; }
+  .ql-color-blue { color: blue; }
+  .ql-color-green { color: green; }
+  .ql-color-yellow { color: yellow; }
+
+  /* Code Block */
+  pre { 
+    background: #f4f4f4; 
+    padding: 1em; 
+    overflow-x: auto; 
+    border-radius: 5px; 
+  }
+  code { 
+    font-family: monospace; 
+    background-color: #f4f4f4; 
+    padding: 2px 4px; 
+    border-radius: 4px; 
+  }
 `;
 
 // Include these styles in the Juice options
