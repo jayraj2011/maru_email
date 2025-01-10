@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import axios from "axios";
 import { Toaster, toast } from "sonner";
-import JoditEditor from "jodit-react";
 import {
   FileUploader,
   FileInput,
@@ -92,6 +91,7 @@ const Home = () => {
       // Text formatting options
       ["bold", "italic", "underline", "strike"],
 
+      [{ header: [1, 2, 3, 4, 5, 6, false] }],
       // Blockquote
       ["blockquote"],
 
@@ -100,10 +100,18 @@ const Home = () => {
       [{ indent: "-1" }, { indent: "+1" }],
 
       // Background and text colors
-      [{ color: [] }, { background: [] }],
+      [
+        {
+          color: [],
+        },
+        { background: [] },
+      ],
 
       // Code block
       ["code-block"],
+
+      // Checklist (tasks)
+      // [{ list: "bullet" }, { list: "ordered" }, { list: "check" }],
 
       // Additional options (optional)
       ["clean"], // Removes formatting
@@ -114,6 +122,9 @@ const Home = () => {
   const formats = [
     // Alignment
     "align",
+
+    //headers
+    "headers",
 
     // Font size and font family
     "size",
@@ -131,6 +142,7 @@ const Home = () => {
     // Lists and indentation
     "list",
     "bullet",
+    "check",
     "indent",
 
     // Background and text colors
@@ -139,6 +151,8 @@ const Home = () => {
 
     // Code block
     "code-block",
+
+    // Custom themes
   ];
 
   const onFileChange = (event) => {

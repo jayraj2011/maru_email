@@ -55,6 +55,7 @@ const quillStyles = `
 
   /* Font Size */
   .ql-size-small { font-size: 0.75em; }
+  .ql-size-regular {font-size: 1rem; }
   .ql-size-large { font-size: 1.5em; }
   .ql-size-huge { font-size: 2.5em; }
 
@@ -77,29 +78,115 @@ const quillStyles = `
   .ql-underline { text-decoration: underline; }
   .ql-bold { font-weight: bold; }
   .ql-italic { font-style: italic; }
+  .ql-link {color: #007bff; text-decoration: underline;}
+  .ql-code {background-color: #f8f9fa; color: #212529; font-family: Menlo, Monaco, monospace;}
+
 
   /* Indent */
   .ql-indent-1 { padding-left: 3em; }
   .ql-indent-2 { padding-left: 6em; }
   .ql-indent-3 { padding-left: 9em; }
   .ql-indent-4 { padding-left: 12em; }
+  .ql-indent-5 { padding-left: 15em; }
+  .ql-indent-6 { padding-left: 18em; }
+  .ql-indent-7 { padding-left: 21em; }
 
   /* List */
   .ql-list-ordered { list-style-type: decimal; }
   .ql-list-bullet { list-style-type: disc; }
   .ql-list-item { margin-left: 1.5em; }
 
+  /* Headers */
+  .ql-header-h1 {font-size: 2.5em; font-weight: bold;}
+  .ql-header-h2 {font-size: 2em; font-weight: bold;}
+  .ql-header-h3 {font-size: 1.75em; font-weight: bold;}
+  .ql-header-h4 {font-size: 1.5em; font-weight: bold;}
+  .ql-header-h5 {font-size: 1.25em; font-weight: bold;}
+  .ql-header-h6 {font-size: 1em; font-weight: bold;}
+
   /* Background Color */
-  .ql-background-yellow { background-color: yellow; }
-  .ql-background-green { background-color: green; }
-  .ql-background-blue { background-color: blue; }
-  .ql-background-red { background-color: red; }
+  .ql-background-red { background-color: #e60000; }
+  .ql-background-orange { background-color: #f90; }
+  .ql-background-yellow { background-color: #ff0; }
+  .ql-background-green { background-color: #008a00; }
+  .ql-background-blue { background-color: #06c; }
+  .ql-background-purple { background-color: #9933ff; }
+  .ql-background-black { background-color: #000; }
+  .ql-background-gray { background-color: #808080; }
+  .ql-background-lightgray { background-color: #d3d3d3; }
+  .ql-background-white { background-color: #fff; }
+  .ql-background-pink { background-color: #ffc0cb; }
+  .ql-background-brown { background-color: #a52a2a; }
+  .ql-background-teal { background-color: #008080; }
+  .ql-background-cyan { background-color: #00ffff; }
+  .ql-background-lime { background-color: #00ff00; }
+  .ql-background-navy { background-color: #000080; }
+  .ql-background-maroon { background-color: #800000; }
+  .ql-background-olive { background-color: #808000; }
+  .ql-background-gold { background-color: #ffd700; }
+  .ql-background-aqua { background-color: #00FFFF; }
+  .ql-background-beige { background-color: #F5F5DC; }
+  .ql-background-coral { background-color: #FF7F50; }
+  .ql-background-fuchsia { background-color: #FF00FF; }
+  .ql-background-ivory { background-color: #FFFFF0; }
+  .ql-background-khaki { background-color: #F0E68C; }
+  .ql-background-lavender { background-color: #E6E6FA; }
+  .ql-background-magenta { background-color: #FF00FF; }
+  .ql-background-orchid { background-color: #DA70D6; }
+  .ql-background-plum { background-color: #8E4585; }
+  .ql-background-salmon { background-color: #FA8072; }
+  .ql-background-sienna { background-color: #A0522D; }
+  .ql-background-silver { background-color: #C0C0C0; }
+  .ql-background-tan { background-color: #D2B48C; }
+  .ql-background-turquoise { background-color: #40E0D0; }
+  .ql-background-violet { background-color: #EE82EE; }
+
+  .ql-primary {background-color: #007bff; color: #ffffff;}
+  .ql-secondary {background-color: #6c757d; color: #ffffff;}
+  .ql-success {background-color: #28a745; color: #ffffff;}
+  .ql-danger {background-color: #dc3545; color: #ffffff;}
+  .ql-warning {background-color: #ffc107; color: #212529;}
+  .ql-info {background-color: #17a2b8; color: #ffffff;}
+  .ql-light {background-color: #f8f9fa; color: #212529;}
+  .ql-dark {background-color: #343a40; color: #ffffff;}
+
 
   /* Text Color */
-  .ql-color-red { color: red; }
-  .ql-color-blue { color: blue; }
-  .ql-color-green { color: green; }
-  .ql-color-yellow { color: yellow; }
+  .ql-color-red { color: #e60000; }
+  .ql-color-orange { color: #f90; }
+  .ql-color-yellow { color: #ff0; }
+  .ql-color-green { color: #008a00; }
+  .ql-color-blue { color: #06c; }
+  .ql-color-purple { color: #9933ff; }
+  .ql-color-black { color: #000; }
+  .ql-color-gray { color: #808080; }
+  .ql-color-lightgray { color: #d3d3d3; }
+  .ql-color-white { color: #fff; }
+  .ql-color-pink { color: #ffc0cb; }
+  .ql-color-brown { color: #a52a2a; }
+  .ql-color-teal { color: #008080; }
+  .ql-color-cyan { color: #00ffff; }
+  .ql-color-lime { color: #00ff00; }
+  .ql-color-navy { color: #000080; }
+  .ql-color-maroon { color: #800000; }
+  .ql-color-olive { color: #808000; }
+  .ql-color-gold { color: #ffd700; }
+  .ql-color-aqua { color: #00FFFF; }
+  .ql-color-beige { color: #F5F5DC; }
+  .ql-color-coral { color: #FF7F50; }
+  .ql-color-fuchsia { color: #FF00FF; }
+  .ql-color-ivory { color: #FFFFF0; }
+  .ql-color-khaki { color: #F0E68C; }
+  .ql-color-lavender { color: #E6E6FA; }
+  .ql-color-magenta { color: #FF00FF; }
+  .ql-color-orchid { color: #DA70D6; }
+  .ql-color-plum { color: #8E4585; }
+  .ql-color-salmon { color: #FA8072; }
+  .ql-color-sienna { color: #A0522D; }
+  .ql-color-silver { color: #C0C0C0; }
+  .ql-color-tan { color: #D2B48C; }
+  .ql-color-turquoise { color: #40E0D0; }
+  .ql-color-violet { color: #EE82EE; }
 
   /* Code Block */
   pre { 
@@ -114,6 +201,50 @@ const quillStyles = `
     padding: 2px 4px; 
     border-radius: 4px; 
   }
+
+  .ql-script {font-family: 'Courier New', Courier, monospace; font-size: 14px;}
+  .ql-preformatted {white-space: pre-wrap; word-wrap: break-word;}
+  .ql-check {text-decoration: check;}
+  .ql-task {list-style-type: none; padding-left: 15px; position: relative;}
+  .ql-task-checked {text-decoration: check;}
+
+  /* Check list */
+ ul[data-checked="true"] input[type="checkbox"] {
+    accent-color: green;
+    background-color: green;
+  }
+
+  ul[data-checked="false"] input[type="checkbox"] {
+    accent-color: gray;
+    background-color: transparent;
+  }
+
+  ul[data-checked="true"] {
+    font-weight: bold;
+    color: green;
+  }
+
+  ul[data-checked="false"] {
+    color: gray;
+    text-decoration: line-through;
+  }
+
+  ul[data-checked="true"] li {
+    color: green;
+  }
+
+  ul[data-checked="false"] li {
+    color: gray;
+    text-decoration: line-through;
+  }
+
+  [data-checked="true"] li::before {
+  content: "\xb9"; /* Unicode character for checkbox */
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  vertical-align: middle;
+}
 `;
 
 // Include these styles in the Juice options
@@ -122,6 +253,7 @@ const juiceOptions = { extraCss: quillStyles };
 app.post("/send", upload.array("attachment", 5), (req, res) => {
   try {
     const { recipients, mailContent, subject } = req.body;
+    console.log(mailContent);
 
     if (!Array.isArray(recipients) || recipients.length === 0) {
       return res
