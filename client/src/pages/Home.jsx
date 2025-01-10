@@ -104,6 +104,40 @@ const Home = () => {
     getMailsFromServer();
   }, []);
 
+  const modules = {
+    toolbar: [
+      [{ size: [] }], // Font size
+      [{ font: [] }],
+      ["strike", "blockquote"],
+      ["link"], // Link
+      ["bold", "italic", "underline"], // Text styling
+      [{ align: [] }], // Text alignment
+      [
+        { list: "ordered" },
+        { list: "bullet" },
+        { indent: "-1" },
+        { indent: "+1" },
+      ],
+    ],
+  };
+
+  // Allowed formats: Include font size, underline, and link
+  const formats = [
+    "size", // Font size
+    "bold",
+    "script",
+    "indent",
+    "blockquote",
+    "code-block",
+    "italic",
+    "underline", // Text styling
+    "link", // Link
+    "font",
+    "list",
+    "bullet", // Bullet lists
+    "align", // Text alignment
+  ];
+
   const onFileChange = (event) => {
     // Update the state
     setFiles(event.target.files[0]);
@@ -133,7 +167,9 @@ const Home = () => {
 
       formData.append("mailContent", editorContent); // Add mailContent field
 
-      formData.append("attachment", files, files.name);
+      if (!files) {
+        formData.append("attachment", files, files.name);
+      }
 
       formData.append("subject", subject);
 
@@ -150,10 +186,12 @@ const Home = () => {
       if (error.code == 400) {
         toast.error("No Email Chosen");
       }
+      console.log("error", error);
       toast.error("Something went wrong. Please try again");
     }
   };
 
+  console.log("files", files);
   const filteredEmails =
     mails &&
     mails.filter((row) =>
@@ -191,13 +229,19 @@ const Home = () => {
             placeholder="Enter the Subject"
             className="border-2 border-gray-200 rounded-lg px-4 py-2 w-full my-4"
           />
-          <JoditEditor
-            ref={editor}
-            value={editorContent}
-            // config={config}
-            tabIndex={1} // tabIndex of textarea
-            onChange={(newContent) => setEditorContent(newContent)} // preferred to use only this option to update the content for performance reasons
-          />
+
+          <div className="md:p-2">
+            <h2 className="text-xl font-medium mb-4">Enter Content </h2>
+            <ReactQuill
+              theme="snow"
+              value={editorContent}
+              onChange={handleChange}
+              placeholder="Start typing..."
+              className="bg-white w-[100%]"
+              formats={formats}
+              modules={modules}
+            />
+          </div>
           <div className="mt-4">
             <input type="file" onChange={onFileChange} />
           </div>
