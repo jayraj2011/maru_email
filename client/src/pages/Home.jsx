@@ -9,7 +9,10 @@ import {
 } from "../utils/file-upload";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
+import QuillTable from "quill-table";
+import Quill from "quill";
 import { ArrowDownNarrowWide } from "lucide-react";
+import QuillBetterTable from "quill-better-table";
 
 const FileSvgDraw = () => {
   return (
@@ -116,6 +119,10 @@ const Home = () => {
       // Additional options (optional)
       ["clean"], // Removes formatting
     ],
+    history: {
+      delay: 2000, // How long to delay before saving history
+      maxStack: 500, // Max number of undo states
+    },
   };
 
   // Allowed formats: Include font size, underline, and link
@@ -151,8 +158,6 @@ const Home = () => {
 
     // Code block
     "code-block",
-
-    // Custom themes
   ];
 
   const onFileChange = (event) => {
