@@ -167,8 +167,8 @@ const Home = () => {
 
       formData.append("mailContent", editorContent); // Add mailContent field
 
-      if (!files) {
-        formData.append("attachment", files, files.name);
+      for (let file of files) {
+        formData.append("attachment", file, file.name);
       }
 
       formData.append("subject", subject);
@@ -242,9 +242,9 @@ const Home = () => {
               modules={modules}
             />
           </div>
-          <div className="mt-4">
+          {/* <div className="mt-4">
             <input type="file" onChange={onFileChange} />
-          </div>
+          </div> */}
           {/* <div className="email-editor-container">
             <div className="content-preview">
               <h3>Preview</h3>

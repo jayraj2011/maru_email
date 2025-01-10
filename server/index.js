@@ -66,6 +66,8 @@ app.post("/send", upload.array("attachment", 5), (req, res) => {
         .json({ message: "Recipients list must be a non-empty array." });
     }
 
+    console.log(req.files);
+
     let Content = juice(mailContent, juiceOptions);
     const mailOptions = {
       from: '"Jayraj" <jayrajb95@gmail.com>',
