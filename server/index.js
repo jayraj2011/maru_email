@@ -66,8 +66,6 @@ app.post("/send", upload.array("attachment", 5), (req, res) => {
         .json({ message: "Recipients list must be a non-empty array." });
     }
 
-    console.log(req.files);
-
     let Content = juice(mailContent, juiceOptions);
     const mailOptions = {
       from: '"Jayraj" <jayrajb95@gmail.com>',
@@ -166,8 +164,6 @@ app.get("/mails", async (req, res) => {
 
   var query = "SELECT * FROM company";
 
-  const query_result = [];
-
   try {
     // Execute the first query (SELECT * FROM company)
     const companies = await queryDatabase(connection, query);
@@ -225,6 +221,49 @@ app.get("/company", (req, res) => {
   var query = "SELECT * FROM company";
 
   connection.query(query, (err, results) => {
+    if (err) {
+      console.error("Error executing query:", err.message);
+      return;
+    }
+    res.status(200).json(results);
+  });
+
+  // Close the connection
+  connection.end((err) => {
+    if (err) {
+      console.error("Error closing the connection:", err.message);
+      return;
+    }
+    console.log("Database connection closed.");
+  });
+});
+
+app.post("/company", (req, res) => {
+  const connection = mysql.createConnection({
+    host: "localhost",
+    user: "root",
+    password: "",
+    database: "email_db",
+  });
+
+  // Connect to the database
+  connection.connect((err) => {
+    if (err) {
+      console.error("Error connecting to the database:", err.message);
+    } else {
+      console.log("Connected to the MySQL database.");
+    }
+  });
+
+  const { company_name } = req.body;
+
+  if (company_name == "") {
+    res.status(500).json({message: "Data is emptty, please provide valid data!"})
+  }
+
+  var query = "INSERT INTO company (company_name) VALUES(?)";
+
+  connection.query(query, [company_name], (err, results) => {
     if (err) {
       console.error("Error executing query:", err.message);
       return;
