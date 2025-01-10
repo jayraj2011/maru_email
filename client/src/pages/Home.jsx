@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import axios from "axios";
 import { Toaster, toast } from "sonner";
 import JoditEditor from "jodit-react";
@@ -8,6 +8,9 @@ import {
   FileUploaderContent,
   FileUploaderItem,
 } from "../utils/file-upload";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
+import { ArrowDownNarrowWide } from "lucide-react";
 
 const FileSvgDraw = () => {
   return (
@@ -46,8 +49,44 @@ const dropzone = {
   maxSize: 15 * 1024 * 1024,
 };
 
+const modules = {
+  toolbar: [
+    [{ size: [] }], // Font size
+    [{ font: [] }],
+    ["strike", "blockquote"],
+    ["link"], // Link
+    ["bold", "italic", "underline"], // Text styling
+    [{ align: [] }], // Text alignment
+    [
+      { list: "ordered" },
+      { list: "bullet" },
+      { indent: "-1" },
+      { indent: "+1" },
+    ],
+  ],
+};
+
+// Allowed formats: Include font size, underline, and link
+const formats = [
+  "size", // Font size
+  "bold",
+  "script",
+  "indent",
+  "blockquote",
+  "code-block",
+  "italic",
+  "underline", // Text styling
+  "link", // Link
+  "font",
+  "list",
+  "bullet", // Bullet lists
+  "align", // Text alignment
+];
+
 const Home = () => {
   const editor = useRef(null);
+  const [showemails, setShowEmails] = useState([]);
+  const [allcompanyemails, setAllCompanyEmails] = useState([]);
   const [editorContent, setEditorContent] = useState("");
   const [recipients, setRecipients] = useState([]);
   const [searchfilter, setSearchFilter] = useState("");
@@ -55,47 +94,29 @@ const Home = () => {
   const [mails, setMails] = useState(null);
   const [files, setFiles] = useState(null);
   const [subject, setSubject] = useState("");
-  // [
-    //   {
-    //     email: "john@example.com",
-    //     company: "Example Corp",
-    //   },
-    //   {
-    //     email: "kotakkashyap2803@gmail.com",
-    //     company: " Quixilinx LLP",
-    //   },
-    //   { email: "jane@example.com", company: "Tech Ltd" },
-    //   {
-    //     email: "bob@example.com",
-    //     company: "Design Inc",
-    //   },
-    //   {
-    //     email: "alice@example.com",
-    //     company: "Solutions LLC",
-    //   },
-    //   {
-    //     email: "jayrajb95@gmail.com",
-    //     company: "Quixilinx LLP",
-    //   },
-    // ]
 
   useEffect(() => {
     const getMailsFromServer = async () => {
-      const mailsRes = await axios.get("http://localhost:4123/getMails");
+      const mailsRes = await axios.get("http://localhost:4123/mails");
+      console.log("res", mailsRes);
       setMails(mailsRes.data);
     };
     getMailsFromServer();
   }, []);
 
-  // const onFileChange = (event) => {
-  //   // Update the state
-  //   setFiles(event.target.files[0])
-  // };
+  const onFileChange = (event) => {
+    // Update the state
+    setFiles(event.target.files[0]);
+  };
 
   // const config = {
   //   readonly: false, // all options from https://xdsoft.net/jodit/docs/,
   //   placeholder: "Start typings...",
   // };
+
+  const handleChange = (value) => {
+    setEditorContent(value); // Update the content state
+  };
 
   const handlesend = async (e) => {
     try {
@@ -105,24 +126,18 @@ const Home = () => {
       setProcessing(true);
 
       const formData = new FormData();
-      
+
       recipients.forEach((recipient) => {
         formData.append("recipients[]", recipient);
       });
 
-      formData.append('mailContent', editorContent); // Add mailContent field
+      formData.append("mailContent", editorContent); // Add mailContent field
 
-      for (let file of files) {
-        formData.append(
-          "attachment",
-          file,
-          file.name
-        );
-      }
+      formData.append("attachment", files, files.name);
 
       formData.append("subject", subject);
 
-      const res = await axios.post('http://localhost:4123/send', formData, {
+      const res = await axios.post("http://localhost:4123/send", formData, {
         headers: {
           "Content-Type": "multipart/form-data", // Ensure the content type is set
         },
@@ -139,18 +154,10 @@ const Home = () => {
     }
   };
 
-  const toggleSelect = (mail) => {
-    setRecipients((prevSelected) =>
-      prevSelected.includes(mail)
-        ? prevSelected.filter((rowmail) => rowmail !== mail)
-        : [...prevSelected, mail]
-    );
-  };
-
   const filteredEmails =
     mails &&
     mails.filter((row) =>
-      row.company_email_prim.toLowerCase().includes(searchfilter.toLowerCase())
+      row.company_name.toLowerCase().includes(searchfilter.toLowerCase())
     );
 
   return (
@@ -168,9 +175,11 @@ const Home = () => {
           </div>
         </div>
       )}
-      <div className="flex p-5 justify-between w-[100%]">
+
+      <div className="flex flex-col md:flex-row p-5 md:justify-between w-[100%]">
+        <Toaster richColors position="top-center" />
         {/* Email Draft Section */}
-        <div className="relative p-5 shadow-lg border-2 border-gray-200 rounded-lg top-[10vh] h-fit max-h-auto w-[60%]">
+        <div className="relative p-5 shadow-lg border-2 border-gray-200 rounded-lg top-[10vh] h-fit max-h-auto w-[100%] md:w-[60%]">
           <header className="flex my-2 justify-between p-5">
             <h1 className=" font-medium text-xl md:text-3xl">Email Draft</h1>
           </header>
@@ -189,9 +198,9 @@ const Home = () => {
             tabIndex={1} // tabIndex of textarea
             onChange={(newContent) => setEditorContent(newContent)} // preferred to use only this option to update the content for performance reasons
           />
-          {/* <div className="mt-4">
+          <div className="mt-4">
             <input type="file" onChange={onFileChange} />
-          </div> */}
+          </div>
           {/* <div className="email-editor-container">
             <div className="content-preview">
               <h3>Preview</h3>
@@ -232,8 +241,7 @@ const Home = () => {
         </div>
 
         {/* Sender email section */}
-        <div className="relative h-fit max-h-[85vh] overflow-y-scroll shadow-lg border-2 border-gray-200 rounded-lg p-5 top-[10vh] m-5 w-[35%]">
-          <Toaster richColors position="top-center" />
+        <div className="relative h-fit max-h-[85vh] overflow-y-scroll shadow-lg border-2 border-gray-200 rounded-lg p-5 top-[10vh] m-5 w-[100%] md:w-[35%]">
           <header className="flex my-2 justify-between p-5">
             <h1 className=" font-medium text-xl md:text-3xl">List of Emails</h1>
             <button
@@ -291,35 +299,98 @@ const Home = () => {
               <thead className=" font-semibold text-md">
                 <tr>
                   <th className="px-4 py-2 text-left">Select</th>
-                  <th className="px-4 py-2 text-left">Email</th>
                   <th className="px-4 py-2 text-right">Company</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredEmails &&
                   filteredEmails.map((row, index) => (
-                    <tr
-                      key={index}
-                      className={`${
-                        recipients.includes(row.company_email_prim)
-                          ? "bg-slate-200"
-                          : "bg-white"
-                      } border-b`}
-                    >
-                      <td className="px-4 py-2">
-                        <input
-                          type="checkbox"
-                          disabled={processing == true}
-                          checked={recipients.includes(row.company_email_prim)}
-                          onChange={() => toggleSelect(row.company_email_prim)}
-                          className="disabled:cursor-not-allowed h-4 w-4"
-                        />
-                      </td>
-                      <td className="px-4 py-2 ">{row.company_email_prim}</td>
-                      <td className="px-4 py-2 whitespace-nowrap text-right">
-                        {row.company_name}
-                      </td>
-                    </tr>
+                    <React.Fragment key={index}>
+                      <tr className={` border-b`}>
+                        <td className="px-4 py-2">
+                          <input
+                            type="checkbox"
+                            disabled={processing == true}
+                            checked={allcompanyemails.includes(
+                              row.company_name
+                            )}
+                            onChange={(e) => {
+                              setAllCompanyEmails((prev) =>
+                                prev.includes(row.company_name)
+                                  ? prev.filter((p) => p != row.company_name)
+                                  : [...prev, row.company_name]
+                              );
+
+                              setRecipients((prev) => {
+                                if (e.target.checked) {
+                                  // Add all subjects of the row
+                                  return [
+                                    ...prev,
+                                    ...row.email_ids
+                                      .filter(
+                                        (email) =>
+                                          !prev.includes(email.company_email)
+                                      )
+                                      .map((item) => item.company_email),
+                                  ];
+                                } else {
+                                  return prev.filter(
+                                    (email) =>
+                                      !row.email_ids
+                                        .map((item) => item.company_email)
+                                        .includes(email)
+                                  );
+                                }
+                              });
+                            }}
+                            className="disabled:cursor-not-allowed h-4 w-4"
+                          />
+                        </td>
+                        <td className="px-4 py-2 whitespace-nowrap text-right">
+                          {row.company_name}
+                        </td>
+                        <td>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowEmails((prev) =>
+                                prev.includes(row.company_name)
+                                  ? prev.filter((p) => p !== row.company_name)
+                                  : [...prev, row.company_name]
+                              );
+                            }}
+                          >
+                            {" "}
+                            <ArrowDownNarrowWide />
+                          </button>
+                        </td>
+                      </tr>
+                      {showemails.includes(row.company_name) &&
+                        row.email_ids.map((ids, i) => (
+                          <tr key={i} className={` border-b`}>
+                            <td className="px-4 py-2">
+                              <input
+                                type="checkbox"
+                                disabled={processing == true}
+                                checked={recipients.includes(ids.company_email)}
+                                onChange={() =>
+                                  setRecipients((prev) =>
+                                    prev.includes(ids.company_email)
+                                      ? prev.filter(
+                                          (p) => p != ids.company_email
+                                        )
+                                      : [...prev, ids.company_email]
+                                  )
+                                }
+                                className="disabled:cursor-not-allowed h-4 w-4 ml-[1rem]"
+                              />
+                            </td>
+                            <td className="px-4 py-2 whitespace-nowrap text-right text-xs">
+                              {ids.company_email}
+                            </td>
+                          </tr>
+                        ))}
+                    </React.Fragment>
                   ))}
               </tbody>
             </table>
