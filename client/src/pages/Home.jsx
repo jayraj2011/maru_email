@@ -49,43 +49,15 @@ const dropzone = {
   maxSize: 15 * 1024 * 1024,
 };
 
-const modules = {
-  toolbar: [
-    [{ size: [] }], // Font size
-    [{ font: [] }],
-    ["strike", "blockquote"],
-    ["link"], // Link
-    ["bold", "italic", "underline"], // Text styling
-    [{ align: [] }], // Text alignment
-    [
-      { list: "ordered" },
-      { list: "bullet" },
-      { indent: "-1" },
-      { indent: "+1" },
-    ],
-  ],
-};
-
-// Allowed formats: Include font size, underline, and link
-const formats = [
-  "size", // Font size
-  "bold",
-  "script",
-  "indent",
-  "blockquote",
-  "code-block",
-  "italic",
-  "underline", // Text styling
-  "link", // Link
-  "font",
-  "list",
-  "bullet", // Bullet lists
-  "align", // Text alignment
-];
-
 const Home = () => {
   const editor = useRef(null);
   const [showemails, setShowEmails] = useState([]);
+  const [addcompany, setAddCompany] = useState(false);
+  const [companies, setCompanies] = useState([]);
+  const [email_compny, setEmailCompny] = useState("");
+  const [company_name, setCompanyName] = useState("");
+  const [addemail, setAddEmail] = useState(false);
+  const [company_email, setCompanyEmail] = useState("");
   const [allcompanyemails, setAllCompanyEmails] = useState([]);
   const [editorContent, setEditorContent] = useState("");
   const [recipients, setRecipients] = useState([]);
@@ -98,9 +70,13 @@ const Home = () => {
   useEffect(() => {
     const getMailsFromServer = async () => {
       const mailsRes = await axios.get("http://localhost:4123/mails");
-      console.log("res", mailsRes);
       setMails(mailsRes.data);
     };
+    const getCompaniesFromServer = async () => {
+      const companiesRes = await axios.get("http://localhost:4123/company");
+      setCompanies(companiesRes.data);
+    };
+    getCompaniesFromServer();
     getMailsFromServer();
   }, []);
 
@@ -143,11 +119,6 @@ const Home = () => {
     setFiles(event.target.files[0]);
   };
 
-  // const config = {
-  //   readonly: false, // all options from https://xdsoft.net/jodit/docs/,
-  //   placeholder: "Start typings...",
-  // };
-
   const handleChange = (value) => {
     setEditorContent(value); // Update the content state
   };
@@ -178,7 +149,6 @@ const Home = () => {
           "Content-Type": "multipart/form-data", // Ensure the content type is set
         },
       });
-      // console.log("res", res.data);
       setProcessing(false);
       toast.success(res.data.message);
     } catch (error) {
@@ -191,7 +161,50 @@ const Home = () => {
     }
   };
 
-  console.log("files", files);
+  const handleAddCompany = async (e) => {
+    e.preventDefault();
+    try {
+      if (!company_name) {
+        toast.error("No Company name provided");
+      }
+
+      const res = await axios.post("http://localhost:4123/company", {
+        ["company_name"]: company_name,
+      });
+      toast.success("Successfully added new company");
+      setCompanyName("");
+      setAddCompany(false);
+    } catch (error) {
+      toast.error("Something went wrong. please try again laster");
+      console.log(error);
+    }
+  };
+
+  const handleAddEmail = async (e) => {
+    e.preventDefault();
+    try {
+      if (!company_email || !email_compny) {
+        toast.error("No email provided");
+      }
+
+      const res = await axios.post("http://localhost:4123/email", {
+        ["company_id"]: Number(email_compny),
+        ["company_email"]: company_email,
+      });
+      console.log("company_res", res.data);
+      toast.success(
+        `Successfully added new email for${
+          companies.find((c) => c.id == email_compny).company_name
+        }`
+      );
+      setCompanyEmail("");
+      setAddEmail(false);
+    } catch (error) {
+      toast.error("Something went wrong. please try again laster");
+      console.log(error);
+    }
+  };
+
   const filteredEmails =
     mails &&
     mails.filter((row) =>
@@ -213,11 +226,145 @@ const Home = () => {
           </div>
         </div>
       )}
+      <nav className="flex h-[10vh] justify-center items-center p-4">
+        <button
+          onClick={() => setAddCompany((prev) => !prev)}
+          className="px-4 py-2 border-b-2 border-black"
+        >
+          Add Company
+        </button>
+        <button
+          onClick={() => setAddEmail((prev) => !prev)}
+          className="px-4 py-2 border-b-2 border-black"
+        >
+          Add Email
+        </button>
+      </nav>
+
+      {addcompany && (
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            setAddCompany(false);
+          }}
+          className="absolute inset-0 z-10 bg-[rgba(255,255,255,0.5)] flex items-center justify-center"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="z-20 w-[100%]  max-w-lg border-2 bg-white opacity-100 h-fit rounded-lg shadow-md p-5"
+          >
+            <h1 className=" font-medium text-[2rem]">Add Company</h1>
+            <p>Add a new company</p>
+            <form className="flex flex-col mt-[2rem] gap-5">
+              <div className="flex flex-col gap-1 w-[100%]">
+                <label htmlFor="company_name" className="font-medium">
+                  Enter Company Name
+                </label>
+                <input
+                  id="company_name"
+                  type="text"
+                  placeholder="Enter Company name"
+                  value={company_name}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  className="rounded-lg px-4 py-2 border-2"
+                  required
+                />
+              </div>
+              <div className="flex gap-4 justify-end">
+                <button
+                  onClick={() => setAddCompany(false)}
+                  className="px-3 py-2 rounded-lg bg-red-800 text-white"
+                >
+                  Camcel
+                </button>
+                <button
+                  onClick={(e) => handleAddCompany(e)}
+                  className="px-3 py-2 rounded-lg bg-green-800 text-white"
+                >
+                  Add Company
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {addemail && (
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            setAddEmail(false);
+          }}
+          className="absolute inset-0 z-10 bg-[rgba(255,255,255,0.5)] flex items-center justify-center"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="z-20 w-[100%]  max-w-lg border-2 bg-white opacity-100 h-fit rounded-lg shadow-md p-5"
+          >
+            <h1 className=" font-medium text-[2rem]">Add Email</h1>
+            <p>Add a new email</p>
+            <form className="flex flex-col mt-[2rem] gap-5">
+              <div className="flex flex-col gap-1 w-[100%]">
+                <label htmlFor="c" className="font-medium">
+                  Select Company
+                </label>
+                <select
+                  value={company_email}
+                  onChange={(e) => setEmailCompny(e.target.value)}
+                  className="px-4 py-2 rounded-lg border-2"
+                >
+                  <option value="" disabled>
+                    Select a email
+                  </option>
+                  {companies &&
+                    companies.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.company_name}
+                      </option>
+                    ))}
+                </select>
+              </div>
+              <div className="flex flex-col gap-1 w-[100%]">
+                <label htmlFor="email" className="font-medium">
+                  Enter Email
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  placeholder="Enter email"
+                  value={company_email}
+                  onChange={(e) => setCompanyEmail(e.target.value)}
+                  className="rounded-lg px-4 py-2 border-2"
+                  disabled={email_compny == false}
+                  required
+                />
+              </div>
+              <div className="flex gap-4 justify-end">
+                <button
+                  onClick={() => setAddEmail(false)}
+                  className="px-3 py-2 rounded-lg bg-red-800 text-white"
+                >
+                  Camcel
+                </button>
+                <button
+                  onClick={(e) => handleAddEmail(e)}
+                  className="px-3 py-2 rounded-lg bg-green-800 text-white"
+                >
+                  Add Email
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-col md:flex-row p-5 md:justify-between w-[100%]">
         <Toaster richColors position="top-center" />
+
         {/* Email Draft Section */}
-        <div className="relative p-5 shadow-lg border-2 border-gray-200 rounded-lg top-[10vh] h-fit max-h-auto w-[100%] md:w-[60%]">
+        <div className="relative p-5 shadow-lg border-2 border-gray-200 rounded-lg h-fit max-h-auto w-[100%] md:w-[60%]">
           <header className="flex my-2 justify-between p-5">
             <h1 className=" font-medium text-xl md:text-3xl">Email Draft</h1>
           </header>
@@ -285,7 +432,7 @@ const Home = () => {
         </div>
 
         {/* Sender email section */}
-        <div className="relative h-fit max-h-[85vh] overflow-y-scroll shadow-lg border-2 border-gray-200 rounded-lg p-5 top-[10vh] m-5 w-[100%] md:w-[35%]">
+        <div className="relative h-fit max-h-[85vh] overflow-y-scroll shadow-lg border-2 border-gray-200 rounded-lg p-5 mx-5 w-[100%] md:w-[35%]">
           <header className="flex my-2 justify-between p-5">
             <h1 className=" font-medium text-xl md:text-3xl">List of Emails</h1>
             <button
@@ -343,7 +490,7 @@ const Home = () => {
               <thead className=" font-semibold text-md">
                 <tr>
                   <th className="px-4 py-2 text-left">Select</th>
-                  <th className="px-4 py-2 text-right">Company</th>
+                  <th className="px-4 py-2 text-left">Company</th>
                 </tr>
               </thead>
               <tbody>
@@ -390,7 +537,7 @@ const Home = () => {
                             className="disabled:cursor-not-allowed h-4 w-4"
                           />
                         </td>
-                        <td className="px-4 py-2 whitespace-nowrap text-right">
+                        <td className="px-4 py-2 whitespace-nowrap text-left">
                           {row.company_name}
                         </td>
                         <td>
@@ -411,7 +558,14 @@ const Home = () => {
                       </tr>
                       {showemails.includes(row.company_name) &&
                         row.email_ids.map((ids, i) => (
-                          <tr key={i} className={` border-b`}>
+                          <tr
+                            key={i}
+                            className={`${
+                              recipients.includes(ids.company_email)
+                                ? "bg-slate-200"
+                                : "bg-white"
+                            } border-b`}
+                          >
                             <td className="px-4 py-2">
                               <input
                                 type="checkbox"
@@ -429,7 +583,7 @@ const Home = () => {
                                 className="disabled:cursor-not-allowed h-4 w-4 ml-[1rem]"
                               />
                             </td>
-                            <td className="px-4 py-2 whitespace-nowrap text-right text-xs">
+                            <td className="px-4 py-2 whitespace-nowrap text-left text-xs">
                               {ids.company_email}
                             </td>
                           </tr>

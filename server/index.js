@@ -6,6 +6,7 @@ import path from "path";
 import juice from "juice";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
+import mysql from "mysql2";
 
 const app = express();
 app.use(express.json());
@@ -95,9 +96,6 @@ app.get("/", (req, res) => {
   res.json("server is running");
 });
 
-import mysql from "mysql2";
-// import { fileURLToPath } from "url";
-
 app.get("/getMails", (req, res) => {
   const connection = mysql.createConnection({
     host: "localhost",
@@ -163,6 +161,7 @@ app.get("/mails", async (req, res) => {
   });
 
   var query = "SELECT * FROM company";
+  const query_result = [];
 
   try {
     // Execute the first query (SELECT * FROM company)
@@ -258,9 +257,12 @@ app.post("/company", (req, res) => {
   const { company_name } = req.body;
 
   if (company_name == "") {
-    res.status(500).json({message: "Data is emptty, please provide valid data!"})
+    res
+      .status(500)
+      .json({ message: "Data is emptty, please provide valid data!" });
   }
 
+  console.log("company_name", company_name);
   var query = "INSERT INTO company (company_name) VALUES(?)";
 
   connection.query(query, [company_name], (err, results) => {
