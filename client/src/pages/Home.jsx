@@ -160,11 +160,6 @@ const Home = () => {
     "code-block",
   ];
 
-  const onFileChange = (event) => {
-    // Update the state
-    setFiles(event.target.files[0]);
-  };
-
   const handleChange = (value) => {
     setEditorContent(value); // Update the content state
   };
@@ -184,8 +179,10 @@ const Home = () => {
 
       formData.append("mailContent", editorContent); // Add mailContent field
 
-      for (let file of files) {
-        formData.append("attachment", file, file.name);
+      if (files !== null) {
+        for (let file of files) {
+          formData.append("attachment", file, file.name);
+        }
       }
 
       formData.append("subject", subject);

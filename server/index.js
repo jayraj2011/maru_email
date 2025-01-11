@@ -253,7 +253,6 @@ const juiceOptions = { extraCss: quillStyles };
 app.post("/send", upload.array("attachment", 5), (req, res) => {
   try {
     const { recipients, mailContent, subject } = req.body;
-    console.log(mailContent);
 
     if (!Array.isArray(recipients) || recipients.length === 0) {
       return res
@@ -298,12 +297,12 @@ app.post("/send", upload.array("attachment", 5), (req, res) => {
             .status(500)
             .json({ message: "Failed to send email", error: error.message });
         }
-        console.log("Email sent:", info.response);
+        // console.log("Email sent:", info.response);
         res.status(200).json({ message: "Email sent successfully!" });
       });
     }
   } catch (error) {
-    console.log(error);
+    // console.log(error);
     return res.status(500).json(error.message);
   }
 });
@@ -377,8 +376,6 @@ app.get("/mails", async (req, res) => {
   });
 
   var query = "SELECT * FROM company";
-  const query_result = [];
-
   const query_result = [];
 
   try {
