@@ -7,12 +7,9 @@ import {
   FileUploaderContent,
   FileUploaderItem,
 } from "../utils/file-upload";
+import { ArrowDownNarrowWide, ArrowUpNarrowWide, Trash2 } from "lucide-react";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
-import QuillTable from "quill-table";
-import Quill from "quill";
-import { ArrowDownNarrowWide } from "lucide-react";
-import QuillBetterTable from "quill-better-table";
 
 const FileSvgDraw = () => {
   return (
@@ -57,9 +54,11 @@ const Home = () => {
   const [addcompany, setAddCompany] = useState(false);
   const [companies, setCompanies] = useState([]);
   const [email_compny, setEmailCompny] = useState("");
+  const [email_to_delte, setEmailToDelete] = useState(null);
   const [company_name, setCompanyName] = useState("");
   const [addemail, setAddEmail] = useState(false);
   const [company_email, setCompanyEmail] = useState("");
+  const [deleteemail, setDeleteEmail] = useState(false);
   const [allcompanyemails, setAllCompanyEmails] = useState([]);
   const [editorContent, setEditorContent] = useState("");
   const [recipients, setRecipients] = useState([]);
@@ -83,42 +82,45 @@ const Home = () => {
   }, []);
 
   const modules = {
-    toolbar: [
-      // Alignment options
-      [{ align: [] }],
+    toolbar: {
+      container: [
+        // Alignment options
+        [{ align: [] }],
 
-      // Font size and font family
-      [{ size: ["small", false, "large", "huge"] }],
-      [{ font: [] }],
+        // Font size and font family
+        [{ size: ["small", false, "large", "huge"] }],
+        [{ font: [] }],
 
-      // Text formatting options
-      ["bold", "italic", "underline", "strike"],
+        // Text formatting options
+        ["bold", "italic", "underline", "strike"],
 
-      [{ header: [1, 2, 3, 4, 5, 6, false] }],
-      // Blockquote
-      ["blockquote"],
+        [{ header: [1, 2, 3, 4, 5, 6, false] }],
+        // Blockquote
+        ["blockquote"],
 
-      // Lists and indentation
-      [{ list: "ordered" }, { list: "bullet" }],
-      [{ indent: "-1" }, { indent: "+1" }],
+        // Lists and indentation
+        [{ list: "ordered" }, { list: "bullet" }],
+        [{ indent: "-1" }, { indent: "+1" }],
 
-      // Background and text colors
-      [
-        {
-          color: [],
-        },
-        { background: [] },
+        // Background and text colors
+        [
+          {
+            color: [],
+          },
+          { background: [] },
+        ],
+
+        // Code block
+        ["code-block"],
+
+        // Checklist (tasks)
+        // [{ list: "bullet" }, { list: "ordered" }, { list: "check" }],
+
+        ["better-table"],
+        // Additional options (optional)
+        ["clean"], // Removes formatting
       ],
-
-      // Code block
-      ["code-block"],
-
-      // Checklist (tasks)
-      // [{ list: "bullet" }, { list: "ordered" }, { list: "check" }],
-
-      // Additional options (optional)
-      ["clean"], // Removes formatting
-    ],
+    },
     history: {
       delay: 2000, // How long to delay before saving history
       maxStack: 500, // Max number of undo states
@@ -248,11 +250,29 @@ const Home = () => {
     }
   };
 
+  const handleDeleteEmail = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await axios.delete("http://localhost:4123/email", {
+        ["id"]: Number(email_to_delte.id),
+      });
+      console.log("res", res);
+      toast.success("Successfully deleted email");
+      setEmailToDelete(null);
+      setDeleteEmail(false);
+    } catch (error) {
+      toast.error("Something went wrong. please try again laster");
+      console.log(error);
+    }
+  };
+
   const filteredEmails =
     mails &&
     mails.filter((row) =>
       row.company_name.toLowerCase().includes(searchfilter.toLowerCase())
     );
+
+  console.log("delete email", email_to_delte);
 
   return (
     <>
@@ -295,11 +315,13 @@ const Home = () => {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="z-20 w-[100%]  max-w-lg border-2 bg-white opacity-100 h-fit rounded-lg shadow-md p-5"
+            className="z-20 w-[80%] md:w-[100%] max-w-lg border-2 bg-white opacity-100 h-fit rounded-lg shadow-md p-5"
           >
-            <h1 className=" font-medium text-[2rem]">Add Company</h1>
+            <h1 className=" font-medium text-[1rem] md:text-[2rem]">
+              Add Company
+            </h1>
             <p>Add a new company</p>
-            <form className="flex flex-col mt-[2rem] gap-5">
+            <form className="flex flex-col mt-[1rem] md:mt-[2rem] gap-5">
               <div className="flex flex-col gap-1 w-[100%]">
                 <label htmlFor="company_name" className="font-medium">
                   Enter Company Name
@@ -344,11 +366,13 @@ const Home = () => {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="z-20 w-[100%]  max-w-lg border-2 bg-white opacity-100 h-fit rounded-lg shadow-md p-5"
+            className="z-20 w-[80%] md:w-[100%]  max-w-lg border-2 bg-white opacity-100 h-fit rounded-lg shadow-md p-5"
           >
-            <h1 className=" font-medium text-[2rem]">Add Email</h1>
+            <h1 className=" font-medium text-[1.5rem] md:text-[2rem]">
+              Add Email
+            </h1>
             <p>Add a new email</p>
-            <form className="flex flex-col mt-[2rem] gap-5">
+            <form className="flex flex-col mt-[1rem] md:mt-[2rem] gap-5">
               <div className="flex flex-col gap-1 w-[100%]">
                 <label htmlFor="c" className="font-medium">
                   Select Company
@@ -403,6 +427,41 @@ const Home = () => {
         </div>
       )}
 
+      {deleteemail && (
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            setDeleteEmail(false);
+          }}
+          className="absolute inset-0 z-10 bg-[rgba(255,255,255,0.5)] flex items-center justify-center"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="z-20 w-[80%] md:w-[100%] max-w-lg border-2 bg-white opacity-100 h-fit rounded-lg shadow-md p-5"
+          >
+            <h1 className=" leading-none my-2 font-medium text-[1rem] md:text-[1.5rem]">
+              Are you sure you want to delete {email_to_delte?.company_email}
+            </h1>
+            <p>It would delete the email permantly</p>
+            <div className="flex gap-4 mt-[2rem] justify-end">
+              <button
+                onClick={() => setDeleteEmail(false)}
+                className="px-3 py-2 rounded-lg bg-black text-white"
+              >
+                Camcel
+              </button>
+              <button
+                onClick={(e) => handleDeleteEmail(e)}
+                className="px-3 py-2 rounded-lg bg-red-800 text-white"
+              >
+                Delete email
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col md:flex-row p-5 md:justify-between w-[100%]">
         <Toaster richColors position="top-center" />
 
@@ -423,6 +482,7 @@ const Home = () => {
           <div className="md:p-2">
             <h2 className="text-xl font-medium mb-4">Enter Content </h2>
             <ReactQuill
+              ref={editor}
               theme="snow"
               value={editorContent}
               onChange={handleChange}
@@ -581,7 +641,18 @@ const Home = () => {
                           />
                         </td>
                         <td className="px-4 py-2 whitespace-nowrap text-left">
-                          {row.company_name}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowEmails((prev) =>
+                                prev.includes(row.company_name)
+                                  ? prev.filter((p) => p !== row.company_name)
+                                  : [...prev, row.company_name]
+                              );
+                            }}
+                          >
+                            <label htmlFor="cname">{row.company_name}</label>
+                          </button>
                         </td>
                         <td>
                           <button
@@ -594,8 +665,11 @@ const Home = () => {
                               );
                             }}
                           >
-                            {" "}
-                            <ArrowDownNarrowWide />
+                            {showemails.includes(row.company_name) ? (
+                              <ArrowUpNarrowWide />
+                            ) : (
+                              <ArrowDownNarrowWide />
+                            )}
                           </button>
                         </td>
                       </tr>
@@ -627,8 +701,21 @@ const Home = () => {
                                 className="disabled:cursor-not-allowed h-4 w-4 ml-[1.5rem]"
                               />
                             </td>
-                            <td className="px-4 py-2 whitespace-nowrap text-left text-xs">
+                            <td className=" px-4 py-2 whitespace-nowrap text-left text-xs">
                               <label htmlFor={i}>{ids.company_email}</label>
+                            </td>
+                            <td className=" py-2 whitespace-nowrap text-left">
+                              <button
+                                onClick={() => {
+                                  setEmailToDelete({
+                                    ["id"]: ids.id,
+                                    ["company_email"]: ids.company_email,
+                                  });
+                                  setDeleteEmail(true);
+                                }}
+                              >
+                                <Trash2 />
+                              </button>
                             </td>
                           </tr>
                         ))}
