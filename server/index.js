@@ -66,25 +66,47 @@ app.post("/send", upload.array("attachment", 5), (req, res) => {
         .json({ message: "Recipients list must be a non-empty array." });
     }
 
-    let Content = juice(mailContent, juiceOptions);
-    const mailOptions = {
-      from: '"Jayraj" <jayrajb95@gmail.com>',
-      to: recipients.join(","),
-      subject: subject,
-      html: Content || "<p>Default email content</p>", // Ensure emailTemplate is defined
-      attachments: req.files,
-    };
+    if (!req.files) {
+      let Content = juice(mailContent, juiceOptions);
+      const mailOptions = {
+        from: '"Jayraj" <jayrajb95@gmail.com>',
+        to: recipients.join(","),
+        subject: subject,
+        html: Content || "<p>Default email content</p>", // Ensure emailTemplate is defined
+        // attachments: req.files,
+      };
 
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        console.error("Error sending email:", error.message);
-        return res
-          .status(500)
-          .json({ message: "Failed to send email", error: error.message });
-      }
-      console.log("Email sent:", info.response);
-      res.status(200).json({ message: "Email sent successfully!" });
-    });
+      transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+          console.error("Error sending email:", error.message);
+          return res
+            .status(500)
+            .json({ message: "Failed to send email", error: error.message });
+        }
+        console.log("Email sent:", info.response);
+        res.status(200).json({ message: "Email sent successfully!" });
+      });
+    } else {
+      let Content = juice(mailContent, juiceOptions);
+      const mailOptions = {
+        from: '"Jayraj" <jayrajb95@gmail.com>',
+        to: recipients.join(","),
+        subject: subject,
+        html: Content || "<p>Default email content</p>", // Ensure emailTemplate is defined
+        attachments: req.files,
+      };
+
+      transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+          console.error("Error sending email:", error.message);
+          return res
+            .status(500)
+            .json({ message: "Failed to send email", error: error.message });
+        }
+        console.log("Email sent:", info.response);
+        res.status(200).json({ message: "Email sent successfully!" });
+      });
+    }
   } catch (error) {
     console.log(error);
     return res.status(500).json(error.message);
@@ -163,6 +185,8 @@ app.get("/mails", async (req, res) => {
   });
 
   var query = "SELECT * FROM company";
+
+  const query_result = [];
 
   try {
     // Execute the first query (SELECT * FROM company)
