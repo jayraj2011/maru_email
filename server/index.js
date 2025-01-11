@@ -262,6 +262,7 @@ app.post("/send", upload.array("attachment", 5), (req, res) => {
 
     if (!req.files) {
       let Content = juice(mailContent, juiceOptions);
+      console.log("Content", Content);
       const mailOptions = {
         from: '"Jayraj" <jayrajb95@gmail.com>',
         to: recipients.join(","),
