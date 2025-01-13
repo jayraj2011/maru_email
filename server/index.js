@@ -31,7 +31,7 @@ const transporter = nodemailer.createTransport({
     // user: "jayrajb95@gmail.com",
     // pass: "chaw wezg ctie wljg",
     user: "admin@labourlaws.co.in",
-    pass: "ds39uWFwHr0F"
+    pass: "ds39uWFwHr0F",
   },
 });
 
@@ -263,13 +263,16 @@ app.post("/send", upload.array("attachment", 5), (req, res) => {
     const { recipients, mailContent, subject } = req.body;
 
     const url = "api.zeptomail.com/";
-    const token = "Zoho-enczapikey wSsVR60l8hT5C/h1njX5JO9szVUEBgn+Ek4r0Af06Xf8T63Apsc5whfIAwbyGqRJGWRpQTREp+h8m0sC02dahth/mwtRCiiF9mqRe1U4J3x17qnvhDzJW2hUmxKILosKxQpqmWBnE80g+g==";
+    const token =
+      "Zoho-enczapikey wSsVR60l8hT5C/h1njX5JO9szVUEBgn+Ek4r0Af06Xf8T63Apsc5whfIAwbyGqRJGWRpQTREp+h8m0sC02dahth/mwtRCiiF9mqRe1U4J3x17qnvhDzJW2hUmxKILosKxQpqmWBnE80g+g==";
 
     if (!Array.isArray(recipients) || recipients.length === 0) {
       return res
         .status(400)
         .json({ message: "Recipients list must be a non-empty array." });
     }
+
+    let Content = juice(mailContent, juiceOptions);
 
     if (!req.files || req.files.length === 0) {
       // let Content = juice(mailContent, juiceOptions);
@@ -291,32 +294,27 @@ app.post("/send", upload.array("attachment", 5), (req, res) => {
       //   console.log("Email sent:", info.response);
       //   res.status(200).json({ message: "Email sent successfully!" });
       // });
-      
-      let client = new SendMailClient({url, token});
+
+      let client = new SendMailClient({ url, token });
 
       for (let recipient of recipients) {
-        client.sendMail({
-            "from": 
-            {
-                "address": "noreply@labourlaws.co.in",
-                "name": "noreply"
+        client
+          .sendMail({
+            from: {
+              address: "noreply@labourlaws.co.in",
+              name: "noreply",
             },
-            "to": 
-            [
-                {
-                "email_address": 
-                    {
-                        "address": recipient,
-                        "name": "Quixilinx LLP"
-                    }
-                },
-            ],
-            "subject": subject,
-            "htmlbody": mailContent,
-        }).then((resp) => console.log("success")).catch((error) => console.log("error"));
+            to: [...recipient],
+            subject: subject,
+            htmlbody: Content,
+          })
+          .then((resp) => console.log("success"))
+          .catch((error) => {
+            console.log("error", error.message);
+            res.status(500).json(error.message);
+          });
       }
     } else {
-      let Content = juice(mailContent, juiceOptions);
       const mailOptions = {
         from: '"Jayraj" <jayrajb95@gmail.com>',
         to: recipients.join(","),
@@ -337,7 +335,7 @@ app.post("/send", upload.array("attachment", 5), (req, res) => {
       });
     }
   } catch (error) {
-    // console.log(error);
+    console.log("catch error", err.message);
     return res.status(500).json(error.message);
   }
 });
