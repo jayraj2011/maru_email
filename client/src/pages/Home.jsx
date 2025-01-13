@@ -613,8 +613,8 @@ const Home = () => {
                                 prev.includes(row.company_name)
                                   ? prev.filter((p) => p != row.company_name)
                                   : [...prev, row.company_name]
-                              );
-
+                              );                              
+                              
                               setRecipients((prev) => {
                                 if (e.target.checked) {
                                   // Add all subjects of the row
@@ -625,14 +625,14 @@ const Home = () => {
                                         (email) =>
                                           !prev.includes(email.company_email)
                                       )
-                                      .map((item) => item.company_email),
+                                      .map((item) => ({"address": item.company_email, "name": item.company_name})),
                                   ];
                                 } else {
                                   return prev.filter(
                                     (email) =>
                                       !row.email_ids
                                         .map((item) => item.company_email)
-                                        .includes(email)
+                                        .includes(email.address)
                                   );
                                 }
                               });
@@ -693,9 +693,9 @@ const Home = () => {
                                   setRecipients((prev) =>
                                     prev.includes(ids.company_email)
                                       ? prev.filter(
-                                          (p) => p != ids.company_email
+                                          (p) => p.address != ids.company_email
                                         )
-                                      : [...prev, ids.company_email]
+                                      : [...prev, ({"address": item.company_email, "name": item.company_name})]
                                   )
                                 }
                                 className="disabled:cursor-not-allowed h-4 w-4 ml-[1.5rem]"

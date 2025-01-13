@@ -8,6 +8,11 @@ import { fileURLToPath } from "url";
 import { dirname } from "path";
 import mysql from "mysql2";
 
+// https://www.npmjs.com/package/zeptomail
+
+// For ES6
+import { SendMailClient } from "zeptomail";
+
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -18,11 +23,15 @@ app.use(
 );
 
 const transporter = nodemailer.createTransport({
-  service: "Gmail",
-  secure: false,
+  // service: "Gmail",
+  smtp: "smtp.zeptomail.com",
+  port: 587,
+  secure: true,
   auth: {
-    user: "jayrajb95@gmail.com",
-    pass: "chaw wezg ctie wljg",
+    // user: "jayrajb95@gmail.com",
+    // pass: "chaw wezg ctie wljg",
+    user: "admin@labourlaws.co.in",
+    pass: "ds39uWFwHr0F"
   },
 });
 
@@ -244,8 +253,7 @@ const quillStyles = `
   width: 16px;
   height: 16px;
   vertical-align: middle;
-}
-`;
+}`;
 
 // Include these styles in the Juice options
 const juiceOptions = { extraCss: quillStyles };
@@ -254,33 +262,59 @@ app.post("/send", upload.array("attachment", 5), (req, res) => {
   try {
     const { recipients, mailContent, subject } = req.body;
 
+    const url = "api.zeptomail.com/";
+    const token = "Zoho-enczapikey wSsVR60l8hT5C/h1njX5JO9szVUEBgn+Ek4r0Af06Xf8T63Apsc5whfIAwbyGqRJGWRpQTREp+h8m0sC02dahth/mwtRCiiF9mqRe1U4J3x17qnvhDzJW2hUmxKILosKxQpqmWBnE80g+g==";
+
     if (!Array.isArray(recipients) || recipients.length === 0) {
       return res
         .status(400)
         .json({ message: "Recipients list must be a non-empty array." });
     }
 
-    if (!req.files) {
-      let Content = juice(mailContent, juiceOptions);
-      console.log("Content", Content);
-      const mailOptions = {
-        from: '"Jayraj" <jayrajb95@gmail.com>',
-        to: recipients.join(","),
-        subject: subject,
-        html: Content || "<p>Default email content</p>", // Ensure emailTemplate is defined
-        // attachments: req.files,
-      };
+    if (!req.files || req.files.length === 0) {
+      // let Content = juice(mailContent, juiceOptions);
+      // const mailOptions = {
+      //   from: '"Jayraj" <jayrajb95@gmail.com>',
+      //   to: recipients.join(","),
+      //   subject: subject,
+      //   html: Content || "<p>Default email content</p>", // Ensure emailTemplate is defined
+      //   // attachments: req.files,
+      // };
 
-      transporter.sendMail(mailOptions, (error, info) => {
-        if (error) {
-          console.error("Error sending email:", error.message);
-          return res
-            .status(500)
-            .json({ message: "Failed to send email", error: error.message });
-        }
-        console.log("Email sent:", info.response);
-        res.status(200).json({ message: "Email sent successfully!" });
-      });
+      // transporter.sendMail(mailOptions, (error, info) => {
+      //   if (error) {
+      //     console.error("Error sending email:", error.message);
+      //     return res
+      //       .status(500)
+      //       .json({ message: "Failed to send email", error: error.message });
+      //   }
+      //   console.log("Email sent:", info.response);
+      //   res.status(200).json({ message: "Email sent successfully!" });
+      // });
+      
+      let client = new SendMailClient({url, token});
+
+      for (let recipient of recipients) {
+        client.sendMail({
+            "from": 
+            {
+                "address": "noreply@labourlaws.co.in",
+                "name": "noreply"
+            },
+            "to": 
+            [
+                {
+                "email_address": 
+                    {
+                        "address": recipient,
+                        "name": "Quixilinx LLP"
+                    }
+                },
+            ],
+            "subject": subject,
+            "htmlbody": mailContent,
+        }).then((resp) => console.log("success")).catch((error) => console.log("error"));
+      }
     } else {
       let Content = juice(mailContent, juiceOptions);
       const mailOptions = {
