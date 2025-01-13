@@ -272,7 +272,8 @@ const Home = () => {
       row.company_name.toLowerCase().includes(searchfilter.toLowerCase())
     );
 
-  console.log("delete email", email_to_delte);
+  console.log("recipients", recipients);
+  console.log("filteredEmails", filteredEmails);
 
   return (
     <>
@@ -613,8 +614,8 @@ const Home = () => {
                                 prev.includes(row.company_name)
                                   ? prev.filter((p) => p != row.company_name)
                                   : [...prev, row.company_name]
-                              );                              
-                              
+                              );
+
                               setRecipients((prev) => {
                                 if (e.target.checked) {
                                   // Add all subjects of the row
@@ -625,7 +626,10 @@ const Home = () => {
                                         (email) =>
                                           !prev.includes(email.company_email)
                                       )
-                                      .map((item) => ({"address": item.company_email, "name": item.company_name})),
+                                      .map((it) => ({
+                                        ["address"]: it.company_email,
+                                        ["name"]: row.company_name,
+                                      })),
                                   ];
                                 } else {
                                   return prev.filter(
@@ -678,7 +682,9 @@ const Home = () => {
                           <tr
                             key={i}
                             className={`${
-                              recipients.includes(ids.company_email)
+                              recipients
+                                .map((r) => r.address)
+                                .includes(ids.company_email)
                                 ? "bg-slate-200"
                                 : "bg-white"
                             } border-b`}
@@ -688,14 +694,24 @@ const Home = () => {
                                 id={i}
                                 type="checkbox"
                                 disabled={processing == true}
-                                checked={recipients.includes(ids.company_email)}
+                                checked={recipients
+                                  .map((r) => r.address)
+                                  .includes(ids.company_email)}
                                 onChange={() =>
                                   setRecipients((prev) =>
-                                    prev.includes(ids.company_email)
+                                    prev.some(
+                                      (p) => p.address == ids.company_email
+                                    )
                                       ? prev.filter(
                                           (p) => p.address != ids.company_email
                                         )
-                                      : [...prev, ({"address": item.company_email, "name": item.company_name})]
+                                      : [
+                                          ...prev,
+                                          {
+                                            ["address"]: ids.company_email,
+                                            ["name"]: row.company_name,
+                                          },
+                                        ]
                                   )
                                 }
                                 className="disabled:cursor-not-allowed h-4 w-4 ml-[1.5rem]"
