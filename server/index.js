@@ -313,6 +313,7 @@ app.post("/send", upload.array("attachment", 5), (req, res) => {
             ],
             "subject": subject,
             "htmlbody": mailContent,
+            "attachments": req.files,
         }).then((resp) => console.log("success")).catch((error) => console.log("error"));
       }
     } else {
