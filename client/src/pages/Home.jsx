@@ -119,6 +119,7 @@ const Home = () => {
         ["better-table"],
         // Additional options (optional)
         ["clean"], // Removes formatting
+        ["image"]
       ],
     },
     history: {
@@ -160,6 +161,7 @@ const Home = () => {
 
     // Code block
     "code-block",
+    "image"
   ];
 
   const handleChange = (value) => {

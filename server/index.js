@@ -23,18 +23,18 @@ app.use(
   })
 );
 
-const transporter = nodemailer.createTransport({
-  // service: "Gmail",
-  smtp: "smtp.zeptomail.com",
-  port: 587,
-  secure: true,
-  auth: {
-    // user: "jayrajb95@gmail.com",
-    // pass: "chaw wezg ctie wljg",
-    user: "admin@labourlaws.co.in",
-    pass: "ds39uWFwHr0F",
-  },
-});
+// const transporter = nodemailer.createTransport({
+//   // service: "Gmail",
+//   smtp: "smtp.zeptomail.com",
+//   port: 587,
+//   secure: true,
+//   auth: {
+//     // user: "jayrajb95@gmail.com",
+//     // pass: "chaw wezg ctie wljg",
+//     user: "admin@labourlaws.co.in",
+//     pass: "ds39uWFwHr0F",
+//   },
+// });
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -328,7 +328,6 @@ app.post("/send", upload.array("attachment", 5), (req, res) => {
 
       res.status(200).json({message: "Emails Sent Successfully!!"});
     } else {
-      console.log(req.files);
       // const mailOptions = {
       //   from: '"Jayraj" <jayrajb95@gmail.com>',
       //   to: recipients.join(","),
@@ -575,6 +574,45 @@ app.post("/company", (req, res) => {
   var query = "INSERT INTO company (company_name) VALUES(?)";
 
   connection.query(query, [company_name], (err, results) => {
+    if (err) {
+      console.error("Error executing query:", err.message);
+      return;
+    }
+    res.status(200).json(results);
+  });
+
+  // Close the connection
+  connection.end((err) => {
+    if (err) {
+      console.error("Error closing the connection:", err.message);
+      return;
+    }
+    console.log("Database connection closed.");
+  });
+});
+
+app.delete("/company", (req, res) => {
+  const connection = mysql.createConnection({
+    host: "localhost",
+    user: "root",
+    password: "",
+    database: "email_db",
+  });
+
+  const { companyID } = req.body;
+
+  // Connect to the database
+  connection.connect((err) => {
+    if (err) {
+      console.error("Error connecting to the database:", err.message);
+    } else {
+      console.log("Connected to the MySQL database.");
+    }
+  });
+
+  var query = "DELETE FROM company WHERE id=?";
+
+  connection.query(query, [companyID], (err, results) => {
     if (err) {
       console.error("Error executing query:", err.message);
       return;
