@@ -8,8 +8,11 @@ import {
   FileUploaderItem,
 } from "../utils/file-upload";
 import { ArrowDownNarrowWide, ArrowUpNarrowWide, Trash2 } from "lucide-react";
-import ReactQuill from "react-quill";
+import ReactQuill, { Quill } from "react-quill";
 import "react-quill/dist/quill.snow.css";
+import ImageResize from "quill-image-resize-module-react";
+
+Quill.register("modules/imageResize", ImageResize);
 
 const FileSvgDraw = () => {
   return (
@@ -119,12 +122,20 @@ const Home = () => {
         ["better-table"],
         // Additional options (optional)
         ["clean"], // Removes formatting
-        ["image"]
+        ["image"],
       ],
     },
     history: {
       delay: 2000, // How long to delay before saving history
       maxStack: 500, // Max number of undo states
+    },
+    clipboard: {
+      // toggle to add extra line breaks when pasting HTML:
+      matchVisual: false,
+    },
+    imageResize: {
+      parchment: Quill.import("parchment"),
+      modules: ["Resize", "DisplaySize"],
     },
   };
 
@@ -161,7 +172,7 @@ const Home = () => {
 
     // Code block
     "code-block",
-    "image"
+    "image",
   ];
 
   const handleChange = (value) => {
