@@ -176,7 +176,7 @@ const Home = () => {
       const formData = new FormData();
 
       recipients.forEach((recipient) => {
-        formData.append("recipients[]", recipient);
+        formData.append("recipients[]", JSON.stringify(recipient));
       });
 
       formData.append("mailContent", editorContent); // Add mailContent field
@@ -272,8 +272,8 @@ const Home = () => {
       row.company_name.toLowerCase().includes(searchfilter.toLowerCase())
     );
 
-  console.log("recipients", recipients);
-  console.log("filteredEmails", filteredEmails);
+  // console.log("recipients", recipients);
+  // console.log("filteredEmails", filteredEmails);
 
   return (
     <>

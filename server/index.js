@@ -7,6 +7,7 @@ import juice from "juice";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
 import mysql from "mysql2";
+import fs from "fs";
 
 // https://www.npmjs.com/package/zeptomail
 
@@ -44,10 +45,10 @@ const storage = multer.diskStorage({
   },
 
   filename: function (req, file, cb) {
-    let setFilename = file.originalname.split(".");
-    let setFileExtension = setFilename[1];
-    setFilename = setFilename[0];
-    cb(null, setFilename + "-" + Date.now() + "." + setFileExtension);
+    // let setFilename = file.originalname.split(".");
+    // let setFileExtension = setFilename[1];
+    // setFilename = setFilename[0];
+    cb(null, file.originalname);
   },
 });
 
@@ -295,48 +296,107 @@ app.post("/send", upload.array("attachment", 5), (req, res) => {
       //   res.status(200).json({ message: "Email sent successfully!" });
       // });
 
+
       let client = new SendMailClient({ url, token });
 
       for (let recipient of recipients) {
+        const recipient_object = JSON.parse(recipient);
         client
           .sendMail({
             from: {
               address: "noreply@labourlaws.co.in",
               name: "noreply",
             },
-            to: [...recipient],
+            "to": [
+              {
+                "email_address": {
+                  "address": recipient_object.address,
+                  "name": recipient_object.name
+                }
+              }
+            ],
             subject: subject,
             htmlbody: Content,
-            attachments: req.files,
+            // attachments: req.files,
           })
           .then((resp) => console.log("success"))
           .catch((error) => {
-            console.log("error", error.message);
-            res.status(500).json(error.message);
+            console.log("error", error);
+            res.status(500).json(error);
           });
       }
-    } else {
-      const mailOptions = {
-        from: '"Jayraj" <jayrajb95@gmail.com>',
-        to: recipients.join(","),
-        subject: subject,
-        html: Content || "<p>Default email content</p>", // Ensure emailTemplate is defined
-        attachments: req.files,
-      };
 
-      transporter.sendMail(mailOptions, (error, info) => {
-        if (error) {
-          console.error("Error sending email:", error.message);
-          return res
-            .status(500)
-            .json({ message: "Failed to send email", error: error.message });
-        }
-        // console.log("Email sent:", info.response);
-        res.status(200).json({ message: "Email sent successfully!" });
-      });
+      res.status(200).json({message: "Emails Sent Successfully!!"});
+    } else {
+      console.log(req.files);
+      // const mailOptions = {
+      //   from: '"Jayraj" <jayrajb95@gmail.com>',
+      //   to: recipients.join(","),
+      //   subject: subject,
+      //   html: Content || "<p>Default email content</p>", // Ensure emailTemplate is defined
+      //   attachments: req.files,
+      // };
+
+      // transporter.sendMail(mailOptions, (error, info) => {
+      //   if (error) {
+      //     console.error("Error sending email:", error.message);
+      //     return res
+      //       .status(500)
+      //       .json({ message: "Failed to send email", error: error.message });
+      //   }
+      //   // console.log("Email sent:", info.response);
+      //   res.status(200).json({ message: "Email sent successfully!" });
+      // });
+
+      var attachment_files = [];
+
+      for (let file of req.files) {
+        var individual_file = {}
+
+        const filePath = path.join(__dirname, 'uploads', file.originalname);
+        const fileContent = fs.readFileSync(filePath);
+        
+        // Convert the file content to base64
+        const encoded = fileContent.toString('base64');
+        individual_file["content"] = encoded;
+        individual_file["mime_type"] = file.mimetype;
+        individual_file["name"] = file.filename;
+
+        attachment_files.push(individual_file);
+      }
+
+      let client = new SendMailClient({ url, token });
+      
+      for (let recipient of recipients) {
+        const recipient_object = JSON.parse(recipient);
+        client
+          .sendMail({
+            "from": {
+              "address": "noreply@labourlaws.co.in",
+              "name": "noreply",
+            },
+            "to": [
+              {
+                "email_address": {
+                  "address": recipient_object.address,
+                  "name": recipient_object.name
+                }
+              }
+            ],
+            "subject": subject,
+            "htmlbody": Content,
+            "attachments": attachment_files,
+          })
+          .then((resp) => console.log("success"))
+          .catch((error) => {
+            console.log("here", error.error.details);
+            res.status(500).json(error);
+          });
+      }
+      res.status(200).json({message: "Emails Sent Successfully!!"});
     }
   } catch (error) {
-    console.log("catch error", err.message);
+    console.log("catch error", error);
     return res.status(500).json(error.message);
   }
 });
