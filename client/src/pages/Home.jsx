@@ -58,9 +58,11 @@ const Home = () => {
   const [companies, setCompanies] = useState([]);
   const [email_compny, setEmailCompny] = useState("");
   const [email_to_delte, setEmailToDelete] = useState(null);
+  const [company_to_delte, setCompanyToDelete] = useState(null);
   const [company_name, setCompanyName] = useState("");
   const [addemail, setAddEmail] = useState(false);
   const [company_email, setCompanyEmail] = useState("");
+  const [deletecompany, setDeleteCompany] = useState(false);
   const [deleteemail, setDeleteEmail] = useState(false);
   const [allcompanyemails, setAllCompanyEmails] = useState([]);
   const [editorContent, setEditorContent] = useState("");
@@ -279,6 +281,22 @@ const Home = () => {
     }
   };
 
+  const handleDeleteCompany = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await axios.delete("http://localhost:4123/company", {
+        ["companyID"]: Number(company_to_delte.companyID),
+      });
+      console.log("res", res);
+      toast.success("Successfully deleted company");
+      setCompanyToDelete(null);
+      setDeleteCompany(false);
+    } catch (error) {
+      toast.error("Something went wrong. please try again laster");
+      console.log(error);
+    }
+  };
+
   const filteredEmails =
     mails &&
     mails.filter((row) =>
@@ -470,6 +488,41 @@ const Home = () => {
                 className="px-3 py-2 rounded-lg bg-red-800 text-white"
               >
                 Delete email
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deletecompany && (
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            setDeleteCompany(false);
+          }}
+          className="absolute inset-0 z-10 bg-[rgba(255,255,255,0.5)] flex items-center justify-center"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="z-20 w-[80%] md:w-[100%] max-w-lg border-2 bg-white opacity-100 h-fit rounded-lg shadow-md p-5"
+          >
+            <h1 className=" leading-none my-2 font-medium text-[1rem] md:text-[1.5rem]">
+              Are you sure you want to delete {company_to_delte?.name}
+            </h1>
+            <p>It would delete the company permantly</p>
+            <div className="flex gap-4 mt-[2rem] justify-end">
+              <button
+                onClick={() => setDeleteCompany(false)}
+                className="px-3 py-2 rounded-lg bg-black text-white"
+              >
+                Camcel
+              </button>
+              <button
+                onClick={(e) => handleDeleteCompany(e)}
+                className="px-3 py-2 rounded-lg bg-red-800 text-white"
+              >
+                Delete company
               </button>
             </div>
           </div>
@@ -687,6 +740,19 @@ const Home = () => {
                             ) : (
                               <ArrowDownNarrowWide />
                             )}
+                          </button>
+                        </td>
+                        <td>
+                          <button
+                            onClick={() => {
+                              setCompanyToDelete({
+                                ["name"]: row.company_name,
+                                ["companyID"]: row.id,
+                              });
+                              setDeleteCompany(true);
+                            }}
+                          >
+                            <Trash2 />
                           </button>
                         </td>
                       </tr>
