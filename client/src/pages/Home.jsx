@@ -297,11 +297,14 @@ const Home = () => {
     }
   };
 
-  const filteredEmails =
-    mails &&
-    mails.filter((row) =>
-      row.company_name.toLowerCase().includes(searchfilter.toLowerCase())
+  const filteredEmails = useMemo(() => {
+    return (
+      mails &&
+      mails.filter((row) =>
+        row.company_name.toLowerCase().includes(searchfilter.toLowerCase())
+      )
     );
+  });
 
   // console.log("recipients", recipients);
   // console.log("filteredEmails", filteredEmails);
