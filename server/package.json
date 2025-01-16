@@ -20,6 +20,7 @@
     "zeptomail": "^6.1.0"
   },
   "devDependencies": {
+    "loadtest": "^8.1.1",
     "nodemon": "^3.1.9"
   }
 }

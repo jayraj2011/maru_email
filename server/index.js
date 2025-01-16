@@ -8,55 +8,54 @@ import { fileURLToPath } from "url";
 import { dirname } from "path";
 import mysql from "mysql2";
 import fs from "fs";
-
-// https://www.npmjs.com/package/zeptomail
-
-// For ES6
 import { SendMailClient } from "zeptomail";
+import cluster from "cluster";
+import os from "node:os";
 
-const app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(
-  cors({
-    origin: ["http://localhost:5173", "http://localhost:5174"],
-  })
-);
+const startServer = () => {
+  const app = express();
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
+  app.use(
+    cors({
+      origin: ["http://localhost:5173", "http://localhost:5174"],
+    })
+  );
 
-// const transporter = nodemailer.createTransport({
-//   // service: "Gmail",
-//   smtp: "smtp.zeptomail.com",
-//   port: 587,
-//   secure: true,
-//   auth: {
-//     // user: "jayrajb95@gmail.com",
-//     // pass: "chaw wezg ctie wljg",
-//     user: "admin@labourlaws.co.in",
-//     pass: "ds39uWFwHr0F",
-//   },
-// });
+  // const transporter = nodemailer.createTransport({
+  //   // service: "Gmail",
+  //   smtp: "smtp.zeptomail.com",
+  //   port: 587,
+  //   secure: true,
+  //   auth: {
+  //     // user: "jayrajb95@gmail.com",
+  //     // pass: "chaw wezg ctie wljg",
+  //     user: "admin@labourlaws.co.in",
+  //     pass: "ds39uWFwHr0F",
+  //   },
+  // });
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = dirname(__filename);
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "uploads");
-  },
+  const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+      cb(null, "uploads");
+    },
 
-  filename: function (req, file, cb) {
-    // let setFilename = file.originalname.split(".");
-    // let setFileExtension = setFilename[1];
-    // setFilename = setFilename[0];
-    cb(null, file.originalname);
-  },
-});
+    filename: function (req, file, cb) {
+      // let setFilename = file.originalname.split(".");
+      // let setFileExtension = setFilename[1];
+      // setFilename = setFilename[0];
+      cb(null, file.originalname);
+    },
+  });
 
-const upload = multer({ storage });
+  const upload = multer({ storage });
 
-app.use("/uploads", express.static(path.join(__dirname, "filestorage")));
+  app.use("/uploads", express.static(path.join(__dirname, "filestorage")));
 
-const quillStyles = `
+  const quillStyles = `
   /* Alignment */
   .ql-align-right { text-align: right; }
   .ql-align-center { text-align: center; }
@@ -256,462 +255,565 @@ const quillStyles = `
   vertical-align: middle;
 }`;
 
-// Include these styles in the Juice options
-const juiceOptions = { extraCss: quillStyles };
+  // Include these styles in the Juice options
+  const juiceOptions = { extraCss: quillStyles };
 
-app.post("/send", upload.array("attachment", 5), (req, res) => {
-  try {
-    const { recipients, mailContent, subject } = req.body;
+  app.post("/sends", upload.array("attachment", 5), (req, res) => {
+    try {
+      const { recipients, mailContent, subject } = req.body;
 
-    const url = "api.zeptomail.com/";
-    const token =
-      "Zoho-enczapikey wSsVR60l8hT5C/h1njX5JO9szVUEBgn+Ek4r0Af06Xf8T63Apsc5whfIAwbyGqRJGWRpQTREp+h8m0sC02dahth/mwtRCiiF9mqRe1U4J3x17qnvhDzJW2hUmxKILosKxQpqmWBnE80g+g==";
+      const url = "api.zeptomail.com/";
+      const token =
+        "Zoho-enczapikey wSsVR60l8hT5C/h1njX5JO9szVUEBgn+Ek4r0Af06Xf8T63Apsc5whfIAwbyGqRJGWRpQTREp+h8m0sC02dahth/mwtRCiiF9mqRe1U4J3x17qnvhDzJW2hUmxKILosKxQpqmWBnE80g+g==";
 
-    if (!Array.isArray(recipients) || recipients.length === 0) {
-      return res
-        .status(400)
-        .json({ message: "Recipients list must be a non-empty array." });
-    }
-
-    let Content = juice(mailContent, juiceOptions);
-
-    if (!req.files || req.files.length === 0) {
-      // let Content = juice(mailContent, juiceOptions);
-      // const mailOptions = {
-      //   from: '"Jayraj" <jayrajb95@gmail.com>',
-      //   to: recipients.join(","),
-      //   subject: subject,
-      //   html: Content || "<p>Default email content</p>", // Ensure emailTemplate is defined
-      //   // attachments: req.files,
-      // };
-
-      // transporter.sendMail(mailOptions, (error, info) => {
-      //   if (error) {
-      //     console.error("Error sending email:", error.message);
-      //     return res
-      //       .status(500)
-      //       .json({ message: "Failed to send email", error: error.message });
-      //   }
-      //   console.log("Email sent:", info.response);
-      //   res.status(200).json({ message: "Email sent successfully!" });
-      // });
-
-
-      let client = new SendMailClient({ url, token });
-
-      for (let recipient of recipients) {
-        const recipient_object = JSON.parse(recipient);
-        client
-          .sendMail({
-            from: {
-              address: "noreply@labourlaws.co.in",
-              name: "noreply",
-            },
-            "to": [
-              {
-                "email_address": {
-                  "address": recipient_object.address,
-                  "name": recipient_object.name
-                }
-              }
-            ],
-            subject: subject,
-            htmlbody: Content,
-            // attachments: req.files,
-          })
-          .then((resp) => console.log("success"))
-          .catch((error) => {
-            console.log("error", error);
-            res.status(500).json(error);
-          });
+      if (!Array.isArray(recipients) || recipients.length === 0) {
+        return res
+          .status(400)
+          .json({ message: "Recipients list must be a non-empty array." });
       }
 
-      res.status(200).json({message: "Emails Sent Successfully!!"});
-    } else {
-      // const mailOptions = {
-      //   from: '"Jayraj" <jayrajb95@gmail.com>',
-      //   to: recipients.join(","),
-      //   subject: subject,
-      //   html: Content || "<p>Default email content</p>", // Ensure emailTemplate is defined
-      //   attachments: req.files,
-      // };
+      let Content = juice(mailContent, juiceOptions);
 
-      // transporter.sendMail(mailOptions, (error, info) => {
-      //   if (error) {
-      //     console.error("Error sending email:", error.message);
-      //     return res
-      //       .status(500)
-      //       .json({ message: "Failed to send email", error: error.message });
-      //   }
-      //   // console.log("Email sent:", info.response);
-      //   res.status(200).json({ message: "Email sent successfully!" });
-      // });
+      if (!req.files || req.files.length === 0) {
+        let client = new SendMailClient({ url, token });
 
-      var attachment_files = [];
+        for (let recipient of recipients) {
+          const recipient_object = JSON.parse(recipient);
+          client
+            .sendMail({
+              from: {
+                address: "noreply@labourlaws.co.in",
+                name: "noreply",
+              },
+              to: [
+                {
+                  email_address: {
+                    address: recipient_object.address,
+                    name: recipient_object.name,
+                  },
+                },
+              ],
+              subject: subject,
+              htmlbody: Content,
+              // attachments: req.files,
+            })
+            .then((resp) => console.log("success"))
+            .catch((error) => {
+              console.log("error", error);
+              res.status(500).json(error);
+            });
+        }
 
-      for (let file of req.files) {
-        var individual_file = {}
-
-        const filePath = path.join(__dirname, 'uploads', file.originalname);
-        const fileContent = fs.readFileSync(filePath);
-        
-        // Convert the file content to base64
-        const encoded = fileContent.toString('base64');
-        individual_file["content"] = encoded;
-        individual_file["mime_type"] = file.mimetype;
-        individual_file["name"] = file.filename;
-
-        attachment_files.push(individual_file);
-      }
-
-      let client = new SendMailClient({ url, token });
-      
-      for (let recipient of recipients) {
-        const recipient_object = JSON.parse(recipient);
-        client
-          .sendMail({
-            "from": {
-              "address": "noreply@labourlaws.co.in",
-              "name": "noreply",
-            },
-            "to": [
-              {
-                "email_address": {
-                  "address": recipient_object.address,
-                  "name": recipient_object.name
-                }
-              }
-            ],
-            "subject": subject,
-            "htmlbody": Content,
-            "attachments": attachment_files,
-          })
-          .then((resp) => console.log("success"))
-          .catch((error) => {
-            console.log("here", error.error.details);
-            res.status(500).json(error);
-          });
-      }
-      res.status(200).json({message: "Emails Sent Successfully!!"});
-    }
-  } catch (error) {
-    console.log("catch error", error);
-    return res.status(500).json(error.message);
-  }
-});
-
-app.get("/", (req, res) => {
-  res.json("server is running");
-});
-
-app.get("/getMails", (req, res) => {
-  const connection = mysql.createConnection({
-    host: "localhost",
-    user: "root",
-    password: "",
-    database: "email_db",
-  });
-
-  // Connect to the database
-  connection.connect((err) => {
-    if (err) {
-      console.error("Error connecting to the database:", err.message);
-    } else {
-      console.log("Connected to the MySQL database.");
-    }
-  });
-
-  connection.query("SELECT * FROM client_info", (err, results) => {
-    if (err) {
-      console.error("Error executing query:", err.message);
-      return;
-    }
-    res.status(200).json(results);
-  });
-
-  // Close the connection
-  connection.end((err) => {
-    if (err) {
-      console.error("Error closing the connection:", err.message);
-      return;
-    }
-    console.log("Database connection closed.");
-  });
-});
-
-function queryDatabase(connection, query, params = []) {
-  return new Promise((resolve, reject) => {
-    connection.query(query, params, (err, results) => {
-      if (err) {
-        reject(err); // Reject the promise if there is an error
+        res.status(200).json({ message: "Emails Sent Successfully!!" });
       } else {
-        resolve(results); // Resolve the promise with the results
+        var attachment_files = [];
+
+        for (let file of req.files) {
+          var individual_file = {};
+
+          const filePath = path.join(__dirname, "uploads", file.originalname);
+          const fileContent = fs.readFileSync(filePath);
+
+          // Convert the file content to base64
+          const encoded = fileContent.toString("base64");
+          individual_file["content"] = encoded;
+          individual_file["mime_type"] = file.mimetype;
+          individual_file["name"] = file.filename;
+
+          attachment_files.push(individual_file);
+        }
+
+        let client = new SendMailClient({ url, token });
+
+        for (let recipient of recipients) {
+          const recipient_object = JSON.parse(recipient);
+          client
+            .sendMail({
+              from: {
+                address: "noreply@labourlaws.co.in",
+                name: "noreply",
+              },
+              to: [
+                {
+                  email_address: {
+                    address: recipient_object.address,
+                    name: recipient_object.name,
+                  },
+                },
+              ],
+              subject: subject,
+              htmlbody: Content,
+              attachments: attachment_files,
+            })
+            .then((resp) => console.log("success"))
+            .catch((error) => {
+              console.log("here", error.error.details);
+              res.status(500).json(error);
+            });
+        }
+        res.status(200).json({ message: "Emails Sent Successfully!!" });
       }
-    });
-  });
-}
-
-app.get("/mails", async (req, res) => {
-  const connection = mysql.createConnection({
-    host: "localhost",
-    user: "root",
-    password: "",
-    database: "email_db",
-  });
-
-  // Connect to the database
-  connection.connect((err) => {
-    if (err) {
-      console.error("Error connecting to the database:", err.message);
-    } else {
-      console.log("Connected to the MySQL database.");
+    } catch (error) {
+      console.log("catch error", error);
+      return res.status(500).json(error.message);
     }
   });
 
-  var query = "SELECT * FROM company";
-  const query_result = [];
+  // app.post("/send", upload.array("attachment", 5), async (req, res) => {
+  //   try {
+  //     const { recipients, mailContent, subject } = req.body;
+  //     const url = "api.zeptomail.com/";
+  //     const token =
+  //       "Zoho-enczapikey wSsVR60l8hT5C/h1njX5JO9szVUEBgn+Ek4r0Af06Xf8T63Apsc5whfIAwbyGqRJGWRpQTREp+h8m0sC02dahth/mwtRCiiF9mqRe1U4J3x17qnvhDzJW2hUmxKILosKxQpqmWBnE80g+g==";
 
-  try {
-    // Execute the first query (SELECT * FROM company)
-    const companies = await queryDatabase(connection, query);
+  //     if (!Array.isArray(recipients) || recipients.length === 0) {
+  //       return res
+  //         .status(400)
+  //         .json({ message: "Recipients list must be a non-empty array." });
+  //     }
 
-    // For each company, execute a sub-query to fetch client info
-    for (let company of companies) {
-      const new_query = "SELECT * FROM client_info WHERE company_id=?";
-      const client_info = await queryDatabase(connection, new_query, [
-        company.id,
-      ]);
+  //     const Content = juice(mailContent);
 
-      const individual_company = {
-        id: company.id,
-        company_name: company.company_name,
-        email_ids: client_info,
+  //     const client = new SendMailClient({ url, token });
+
+  //     let attachment_files = [];
+  //     if (req.files && req.files.length > 0) {
+  //       attachment_files = req.files.map((file) => {
+  //         const filePath = path.join(__dirname, "uploads", file.originalname);
+  //         const fileContent = fs.readFileSync(filePath);
+  //         return {
+  //           content: fileContent.toString("base64"),
+  //           mime_type: file.mimetype,
+  //           name: file.originalname,
+  //         };
+  //       });
+  //     }
+
+  //     const emailPromises = recipients.map((recipient) => {
+  //       const recipient_object = JSON.parse(recipient);
+  //       return client.sendMail({
+  //         from: {
+  //           address: "noreply@labourlaws.co.in",
+  //           name: "noreply",
+  //         },
+  //         to: [
+  //           {
+  //             email_address: {
+  //               address: recipient_object.address,
+  //               name: recipient_object.name,
+  //             },
+  //           },
+  //         ],
+  //         subject,
+  //         htmlbody: Content,
+  //         attachments: attachment_files,
+  //       });
+  //     });
+
+  //     await Promise.all(emailPromises);
+
+  //     res.status(200).json({ message: "Emails Sent Successfully!!" });
+  //   } catch (error) {
+  //     console.error("Error:", error);
+  //     res.status(500).json({ message: error.message });
+  //   }
+  // });
+
+  app.post("/send", upload.array("attachment", 5), async (req, res) => {
+    try {
+      const { recipients, mailContent, subject } = req.body;
+
+      if (!Array.isArray(recipients) || recipients.length === 0) {
+        return res
+          .status(400)
+          .json({ message: "Recipients list must be a non-empty array." });
+      }
+
+      const Content = juice(mailContent, juiceOptions);
+      const BATCH_SIZE = 50; // Number of emails to send per batch
+      const url = "api.zeptomail.com/";
+      const token =
+        "Zoho-enczapikey wSsVR60l8hT5C/h1njX5JO9szVUEBgn+Ek4r0Af06Xf8T63Apsc5whfIAwbyGqRJGWRpQTREp+h8m0sC02dahth/mwtRCiiF9mqRe1U4J3x17qnvhDzJW2hUmxKILosKxQpqmWBnE80g+g==";
+
+      let attachment_files = [];
+      if (req.files && req.files.length > 0) {
+        attachment_files = req.files.map((file) => {
+          const filePath = path.join(__dirname, "uploads", file.originalname);
+          const fileContent = fs.readFileSync(filePath);
+          return {
+            content: fileContent.toString("base64"),
+            mime_type: file.mimetype,
+            name: file.originalname,
+          };
+        });
+      }
+
+      const client = new SendMailClient({ url, token });
+
+      const sendEmail = async (recipient) => {
+        const recipient_object = JSON.parse(recipient);
+        await client.sendMail({
+          from: {
+            address: "noreply@labourlaws.co.in",
+            name: "noreply",
+          },
+          to: [
+            {
+              email_address: {
+                address: recipient_object.address,
+                name: recipient_object.name,
+              },
+            },
+          ],
+          subject,
+          htmlbody: Content,
+          attachments: attachment_files,
+        });
       };
 
-      query_result.push(individual_company);
-    }
+      for (let i = 0; i < recipients.length; i += BATCH_SIZE) {
+        const batch = recipients.slice(i, i + BATCH_SIZE);
+        console.log(`Processing batch ${i / BATCH_SIZE + 1}`);
+        await Promise.all(batch.map(sendEmail));
+      }
 
-    // Send the result as JSON
-    res.status(200).json(query_result);
-  } catch (error) {
-    console.error("Error during query execution:", error.message);
-    res.status(500).json({ message: "Error processing request" });
-  } finally {
-    // Close the connection after all queries are complete
+      res.status(200).json({ message: "Emails Sent Successfully!!" });
+    } catch (error) {
+      console.error("Error:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/", (req, res) => {
+    res.json("server is running");
+  });
+
+  app.get("/getMails", (req, res) => {
+    const connection = mysql.createConnection({
+      host: "localhost",
+      user: "root",
+      password: "",
+      database: "email_db",
+    });
+
+    // Connect to the database
+    connection.connect((err) => {
+      if (err) {
+        console.error("Error connecting to the database:", err.message);
+      } else {
+        console.log("Connected to the MySQL database.");
+      }
+    });
+
+    connection.query("SELECT * FROM client_info", (err, results) => {
+      if (err) {
+        console.error("Error executing query:", err.message);
+        return;
+      }
+      res.status(200).json(results);
+    });
+
+    // Close the connection
     connection.end((err) => {
       if (err) {
         console.error("Error closing the connection:", err.message);
-      } else {
-        console.log("Database connection closed.");
+        return;
       }
+      console.log("Database connection closed.");
+    });
+  });
+
+  function queryDatabase(connection, query, params = []) {
+    return new Promise((resolve, reject) => {
+      connection.query(query, params, (err, results) => {
+        if (err) {
+          reject(err); // Reject the promise if there is an error
+        } else {
+          resolve(results); // Resolve the promise with the results
+        }
+      });
     });
   }
-});
 
-app.get("/company", (req, res) => {
-  const connection = mysql.createConnection({
-    host: "localhost",
-    user: "root",
-    password: "",
-    database: "email_db",
-  });
+  app.get("/mails", async (req, res) => {
+    const connection = mysql.createConnection({
+      host: "localhost",
+      user: "root",
+      password: "",
+      database: "email_db",
+    });
 
-  // Connect to the database
-  connection.connect((err) => {
-    if (err) {
-      console.error("Error connecting to the database:", err.message);
-    } else {
-      console.log("Connected to the MySQL database.");
+    // Connect to the database
+    connection.connect((err) => {
+      if (err) {
+        console.error("Error connecting to the database:", err.message);
+      } else {
+        console.log("Connected to the MySQL database.");
+      }
+    });
+
+    var query = "SELECT * FROM company";
+    const query_result = [];
+
+    try {
+      // Execute the first query (SELECT * FROM company)
+      const companies = await queryDatabase(connection, query);
+
+      // For each company, execute a sub-query to fetch client info
+      for (let company of companies) {
+        const new_query = "SELECT * FROM client_info WHERE company_id=?";
+        const client_info = await queryDatabase(connection, new_query, [
+          company.id,
+        ]);
+
+        const individual_company = {
+          id: company.id,
+          company_name: company.company_name,
+          email_ids: client_info,
+        };
+
+        query_result.push(individual_company);
+      }
+
+      // Send the result as JSON
+      res.status(200).json(query_result);
+    } catch (error) {
+      console.error("Error during query execution:", error.message);
+      res.status(500).json({ message: "Error processing request" });
+    } finally {
+      // Close the connection after all queries are complete
+      connection.end((err) => {
+        if (err) {
+          console.error("Error closing the connection:", err.message);
+        } else {
+          console.log("Database connection closed.");
+        }
+      });
     }
   });
 
-  var query = "SELECT * FROM company";
+  app.get("/company", (req, res) => {
+    const connection = mysql.createConnection({
+      host: "localhost",
+      user: "root",
+      password: "",
+      database: "email_db",
+    });
 
-  connection.query(query, (err, results) => {
-    if (err) {
-      console.error("Error executing query:", err.message);
-      return;
+    // Connect to the database
+    connection.connect((err) => {
+      if (err) {
+        console.error("Error connecting to the database:", err.message);
+      } else {
+        console.log("Connected to the MySQL database.");
+      }
+    });
+
+    var query = "SELECT * FROM company";
+
+    connection.query(query, (err, results) => {
+      if (err) {
+        console.error("Error executing query:", err.message);
+        return;
+      }
+      res.status(200).json(results);
+    });
+
+    // Close the connection
+    connection.end((err) => {
+      if (err) {
+        console.error("Error closing the connection:", err.message);
+        return;
+      }
+      console.log("Database connection closed.");
+    });
+  });
+
+  app.post("/company", (req, res) => {
+    const connection = mysql.createConnection({
+      host: "localhost",
+      user: "root",
+      password: "",
+      database: "email_db",
+    });
+
+    // Connect to the database
+    connection.connect((err) => {
+      if (err) {
+        console.error("Error connecting to the database:", err.message);
+      } else {
+        console.log("Connected to the MySQL database.");
+      }
+    });
+
+    const { company_name } = req.body;
+
+    if (company_name == "") {
+      res
+        .status(500)
+        .json({ message: "Data is emptty, please provide valid data!" });
     }
-    res.status(200).json(results);
+
+    console.log("company_name", company_name);
+    var query = "INSERT INTO company (company_name) VALUES(?)";
+
+    connection.query(query, [company_name], (err, results) => {
+      if (err) {
+        console.error("Error executing query:", err.message);
+        return;
+      }
+      res.status(200).json(results);
+    });
+
+    // Close the connection
+    connection.end((err) => {
+      if (err) {
+        console.error("Error closing the connection:", err.message);
+        return;
+      }
+      console.log("Database connection closed.");
+    });
   });
 
-  // Close the connection
-  connection.end((err) => {
-    if (err) {
-      console.error("Error closing the connection:", err.message);
-      return;
-    }
-    console.log("Database connection closed.");
+  app.delete("/company", (req, res) => {
+    const connection = mysql.createConnection({
+      host: "localhost",
+      user: "root",
+      password: "",
+      database: "email_db",
+    });
+
+    const { companyID } = req.body;
+
+    // Connect to the database
+    connection.connect((err) => {
+      if (err) {
+        console.error("Error connecting to the database:", err.message);
+      } else {
+        console.log("Connected to the MySQL database.");
+      }
+    });
+
+    var query = "DELETE FROM company WHERE id=?";
+
+    connection.query(query, [companyID], (err, results) => {
+      if (err) {
+        console.error("Error executing query:", err.message);
+        return;
+      }
+      res.status(200).json(results);
+    });
+
+    // Close the connection
+    connection.end((err) => {
+      if (err) {
+        console.error("Error closing the connection:", err.message);
+        return;
+      }
+      console.log("Database connection closed.");
+    });
   });
-});
 
-app.post("/company", (req, res) => {
-  const connection = mysql.createConnection({
-    host: "localhost",
-    user: "root",
-    password: "",
-    database: "email_db",
+  app.post("/email", (req, res) => {
+    const connection = mysql.createConnection({
+      host: "localhost",
+      user: "root",
+      password: "",
+      database: "email_db",
+    });
+
+    // Connect to the database
+    connection.connect((err) => {
+      if (err) {
+        console.error("Error connecting to the database:", err.message);
+      } else {
+        console.log("Connected to the MySQL database.");
+      }
+    });
+
+    const { company_id, company_email } = req.body;
+
+    connection.query(
+      "INSERT INTO client_info (company_id, company_email) VALUES (?, ?)",
+      [company_id, company_email],
+      (err, results) => {
+        if (err) {
+          console.error("Error executing query:", err.message);
+          return;
+        }
+        res.status(200).json(results);
+      }
+    );
+
+    // Close the connection
+    connection.end((err) => {
+      if (err) {
+        console.error("Error closing the connection:", err.message);
+        return;
+      }
+      console.log("Database connection closed.");
+    });
   });
 
-  // Connect to the database
-  connection.connect((err) => {
-    if (err) {
-      console.error("Error connecting to the database:", err.message);
-    } else {
-      console.log("Connected to the MySQL database.");
-    }
+  app.delete("/email", (req, res) => {
+    const connection = mysql.createConnection({
+      host: "localhost",
+      user: "root",
+      password: "",
+      database: "email_db",
+    });
+
+    // Connect to the database
+    connection.connect((err) => {
+      if (err) {
+        console.error("Error connecting to the database:", err.message);
+      } else {
+        console.log("Connected to the MySQL database.");
+      }
+    });
+
+    const { id } = req.body;
+
+    connection.query(
+      "DELETE FROM client_info WHERE id=?",
+      [id],
+      (err, results) => {
+        if (err) {
+          console.error("Error executing query:", err.message);
+          return;
+        }
+        res.status(200).json(results);
+      }
+    );
+
+    // Close the connection
+    connection.end((err) => {
+      if (err) {
+        console.error("Error closing the connection:", err.message);
+        return;
+      }
+      console.log("Database connection closed.");
+    });
   });
 
-  const { company_name } = req.body;
+  app.listen(4123, () => {
+    console.log(`Worker ${process.pid} is running on http://localhost:4123`);
+  });
+};
 
-  if (company_name == "") {
-    res
-      .status(500)
-      .json({ message: "Data is emptty, please provide valid data!" });
+if (cluster.isPrimary) {
+  const numCPUs = os.cpus().length;
+  console.log(`Master process ${process.pid} is running`);
+  console.log(`Forking for ${numCPUs} CPUs`);
+
+  for (let i = 0; i < numCPUs; i++) {
+    cluster.fork();
   }
 
-  console.log("company_name", company_name);
-  var query = "INSERT INTO company (company_name) VALUES(?)";
-
-  connection.query(query, [company_name], (err, results) => {
-    if (err) {
-      console.error("Error executing query:", err.message);
-      return;
-    }
-    res.status(200).json(results);
+  cluster.on("exit", (worker, code, signal) => {
+    console.log(`Worker ${worker.process.pid} died. Restarting...`);
+    cluster.fork();
   });
-
-  // Close the connection
-  connection.end((err) => {
-    if (err) {
-      console.error("Error closing the connection:", err.message);
-      return;
-    }
-    console.log("Database connection closed.");
-  });
-});
-
-app.delete("/company", (req, res) => {
-  const connection = mysql.createConnection({
-    host: "localhost",
-    user: "root",
-    password: "",
-    database: "email_db",
-  });
-
-  const { companyID } = req.body;
-
-  // Connect to the database
-  connection.connect((err) => {
-    if (err) {
-      console.error("Error connecting to the database:", err.message);
-    } else {
-      console.log("Connected to the MySQL database.");
-    }
-  });
-
-  var query = "DELETE FROM company WHERE id=?";
-
-  connection.query(query, [companyID], (err, results) => {
-    if (err) {
-      console.error("Error executing query:", err.message);
-      return;
-    }
-    res.status(200).json(results);
-  });
-
-  // Close the connection
-  connection.end((err) => {
-    if (err) {
-      console.error("Error closing the connection:", err.message);
-      return;
-    }
-    console.log("Database connection closed.");
-  });
-});
-
-app.post("/email", (req, res) => {
-  const connection = mysql.createConnection({
-    host: "localhost",
-    user: "root",
-    password: "",
-    database: "email_db",
-  });
-
-  // Connect to the database
-  connection.connect((err) => {
-    if (err) {
-      console.error("Error connecting to the database:", err.message);
-    } else {
-      console.log("Connected to the MySQL database.");
-    }
-  });
-
-  const { company_id, company_email } = req.body;
-
-  connection.query(
-    "INSERT INTO client_info (company_id, company_email) VALUES (?, ?)",
-    [company_id, company_email],
-    (err, results) => {
-      if (err) {
-        console.error("Error executing query:", err.message);
-        return;
-      }
-      res.status(200).json(results);
-    }
-  );
-
-  // Close the connection
-  connection.end((err) => {
-    if (err) {
-      console.error("Error closing the connection:", err.message);
-      return;
-    }
-    console.log("Database connection closed.");
-  });
-});
-
-app.delete("/email", (req, res) => {
-  const connection = mysql.createConnection({
-    host: "localhost",
-    user: "root",
-    password: "",
-    database: "email_db",
-  });
-
-  // Connect to the database
-  connection.connect((err) => {
-    if (err) {
-      console.error("Error connecting to the database:", err.message);
-    } else {
-      console.log("Connected to the MySQL database.");
-    }
-  });
-
-  const { id } = req.body;
-
-  connection.query(
-    "DELETE FROM client_info WHERE id=?",
-    [id],
-    (err, results) => {
-      if (err) {
-        console.error("Error executing query:", err.message);
-        return;
-      }
-      res.status(200).json(results);
-    }
-  );
-
-  // Close the connection
-  connection.end((err) => {
-    if (err) {
-      console.error("Error closing the connection:", err.message);
-      return;
-    }
-    console.log("Database connection closed.");
-  });
-});
-
-app.listen(4123, () => {
-  console.log("server is running");
-});
+} else {
+  startServer();
+}
