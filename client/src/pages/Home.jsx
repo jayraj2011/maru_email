@@ -7,7 +7,13 @@ import {
   FileUploaderContent,
   FileUploaderItem,
 } from "../utils/file-upload";
-import { ArrowDownNarrowWide, ArrowUpNarrowWide, Trash2 } from "lucide-react";
+import {
+  ArrowDownNarrowWide,
+  ArrowUpNarrowWide,
+  Filter,
+  Pen,
+  Trash2,
+} from "lucide-react";
 import ReactQuill, { Quill } from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import ImageResize from "quill-image-resize-module-react";
@@ -57,11 +63,13 @@ const Home = () => {
   const [addcompany, setAddCompany] = useState(false);
   const [companies, setCompanies] = useState([]);
   const [email_compny, setEmailCompny] = useState("");
+  const [email_compny_label, setEmailCompnyLabel] = useState("");
+  const [email_compny_label_error, setEmailCompnyLabelError] = useState(false);
   const [email_to_delte, setEmailToDelete] = useState(null);
   const [company_to_delte, setCompanyToDelete] = useState(null);
   const [company_name, setCompanyName] = useState("");
   const [addemail, setAddEmail] = useState(false);
-  const [company_email, setCompanyEmail] = useState("");
+  const [company_email, setCompanyEmail] = useState(null);
   const [deletecompany, setDeleteCompany] = useState(false);
   const [deleteemail, setDeleteEmail] = useState(false);
   const [allcompanyemails, setAllCompanyEmails] = useState([]);
@@ -73,6 +81,11 @@ const Home = () => {
   const [files, setFiles] = useState(null);
   const [subject, setSubject] = useState("");
   const [refresh, setRefresh] = useState(false);
+  const [filter_email, setFilterEmail] = useState("");
+  const [show_filter_email, setShowFilterEmail] = useState(false);
+  const [edit_company, setEditCompany] = useState(null);
+  const [show_edit_company, setShowEditCompany] = useState(false);
+  const [select_all, setSelectAll] = useState(false);
 
   useEffect(() => {
     const getMailsFromServer = async () => {
@@ -186,6 +199,15 @@ const Home = () => {
     try {
       if (recipients.length == 0) {
         toast.error("No Email Selected");
+        return;
+      }
+      if (subject.length == 0) {
+        toast.error("No Subject ");
+        return;
+      }
+      if (editorContent.length == 0) {
+        toast.error("No Email Content provided");
+        return;
       }
       setProcessing(true);
 
@@ -223,10 +245,11 @@ const Home = () => {
   };
 
   const handleAddCompany = async (e) => {
-    e.preventDefault();
     try {
+      e.preventDefault();
       if (!company_name) {
         toast.error("No Company name provided");
+        return;
       }
 
       const res = await axios.post("http://localhost:4123/company", {
@@ -243,12 +266,20 @@ const Home = () => {
   };
 
   const handleAddEmail = async (e) => {
-    e.preventDefault();
     try {
-      if (!company_email || !email_compny) {
-        toast.error("No email provided");
+      e.preventDefault();
+      if (!email_compny) {
+        setEmailCompnyLabelError(true);
       }
-
+      if (email_compny_label_error) {
+        toast.error("Enter valid company name");
+        return;
+      }
+      if (!company_email) {
+        toast.error("No email provided");
+        return;
+      }
+      setEmailCompnyLabelError(files);
       const res = await axios.post("http://localhost:4123/email", {
         ["company_id"]: Number(email_compny),
         ["company_email"]: company_email,
@@ -303,15 +334,48 @@ const Home = () => {
     }
   };
 
-  const filteredEmails = useMemo(() => {
+  const handleEditCompany = async (e) => {
+    try {
+      e.preventDefault();
+      if (companies.find((c) => c.company_name == edit_company.company_name)) {
+        toast.error("change company name");
+        return;
+      }
+      const res = await axios.put("http://localhost:4123/company", {
+        companyID: Number(edit_company.companyID),
+        company_name: edit_company.company_name,
+      });
+      console.log("res", res);
+      toast.success("Successfully Edited company name");
+      setEditCompany(null);
+      setShowEditCompany(false);
+      setRefresh((prev) => !prev);
+    } catch (error) {
+      toast.error("Something went wrong. please try again laster");
+      console.log(error);
+    }
+  };
+
+  const filteredCompanies = useMemo(() => {
     if (!mails) return [];
     return mails.filter((row) =>
       row.company_name.toLowerCase().includes(searchfilter.toLowerCase())
     );
   }, [mails, searchfilter]);
 
+  let em = mails && mails.map((em) => em.email_ids).flat();
+
+  let filteredEmails = useMemo(() => {
+    if (!em) return [];
+    return em.filter((row) =>
+      row.company_email.toLowerCase().includes(filter_email.toLowerCase())
+    );
+  }, [em, filter_email]);
+
+  // console.log("em", em);
   // console.log("recipients", recipients);
-  // console.log("filteredEmails", filteredEmails);
+  // console.log("filteredCompanies", filteredCompanies);
+  // console.log("mails", mails);
 
   return (
     <>
@@ -350,7 +414,7 @@ const Home = () => {
             e.preventDefault();
             setAddCompany(false);
           }}
-          className="absolute inset-0 z-10 bg-[rgba(255,255,255,0.5)] flex items-center justify-center"
+          className="absolute inset-0 z-10 bg-[rgba(255,255,255,0.7)] flex items-center justify-center"
         >
           <div
             onClick={(e) => e.stopPropagation()}
@@ -394,6 +458,179 @@ const Home = () => {
         </div>
       )}
 
+      {show_edit_company && (
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            setShowEditCompany(false);
+          }}
+          className="absolute inset-0 z-10 bg-[rgba(255,255,255,0.7)] flex items-center justify-center"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="z-20 w-[80%] md:w-[100%] max-w-lg border-2 bg-white opacity-100 h-fit rounded-lg shadow-md p-5"
+          >
+            <h1 className=" font-medium text-[1rem] md:text-[2rem]">
+              Change
+              {
+                companies.find((c) => c.id == edit_company.companyID)
+                  .company_name
+              }
+              name
+            </h1>
+            <p>Edit the company name</p>
+            <form className="flex flex-col mt-[1rem] md:mt-[2rem] gap-5">
+              <div className="flex flex-col gap-1 w-[100%]">
+                <label htmlFor="company_name" className="font-medium">
+                  Enter New Company Name
+                </label>
+                <input
+                  id="company_name"
+                  type="text"
+                  placeholder="Enter Company name"
+                  value={edit_company.company_name}
+                  onChange={(e) =>
+                    setEditCompany((prev) => ({
+                      ...prev,
+                      company_name: e.target.value,
+                    }))
+                  }
+                  className="rounded-lg px-4 py-2 border-2"
+                  required
+                />
+              </div>
+              <div className="flex gap-4 justify-end">
+                <button
+                  onClick={() => setShowEditCompany(false)}
+                  className="px-3 py-2 rounded-lg bg-red-800 text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={(e) => handleEditCompany(e)}
+                  className="px-3 py-2 rounded-lg bg-green-800 text-white"
+                >
+                  Edit Company
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {show_filter_email && (
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            setShowFilterEmail(false);
+          }}
+          className="absolute inset-0 z-10 bg-[rgba(255,255,255,0.7)] flex items-center justify-center"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className={`z-20 w-[80%] md:w-[40%] border-2 ml-auto bg-white opacity-100 h-[100vh] rounded-lg shadow-md p-5 transform transition-transform duration-1000 ease-in-out ${
+              show_filter_email ? "block translate-x-0" : "hidden translate-x-2"
+            }`}
+          >
+            <h1 className=" mt-[10vh] font-medium text-[1.5rem] md:text-[2rem]">
+              Search Email
+            </h1>
+            <p>Search for alls email</p>
+            <div className="flex items-center px-2 gap-1 border-2 w-full">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="lucide lucide-search"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.3-4.3" />
+              </svg>
+              <input
+                type="text"
+                value={filter_email}
+                onChange={(e) => setFilterEmail(e.target.value)}
+                placeholder="Search for emails here"
+                className="my-1 w-full px-3 py-2 rounded-lg"
+                autoComplete="new-password"
+                spellCheck="false"
+                autoCorrect="off"
+                autoFocus
+              />
+            </div>
+            <table className="mt-5 shadow-md sm:rounded-lg p-4 min-w-full table-auto">
+              <thead className=" font-semibold text-md">
+                <tr>
+                  <th className="px-4 py-2 text-left">select</th>
+                  <th className="px-4 py-2 text-left">id</th>
+                  <th className="px-4 py-2 text-left">Emails</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredEmails &&
+                  filteredEmails.map((em, i) => (
+                    <tr
+                      key={i}
+                      className={`${
+                        recipients
+                          .map((r) => r.address)
+                          .includes(em.company_email)
+                          ? "bg-slate-200"
+                          : "bg-white"
+                      } border-b`}
+                    >
+                      <td className="px-4 py-2">
+                        <input
+                          id={i}
+                          type="checkbox"
+                          disabled={processing == true}
+                          checked={recipients
+                            .map((r) => r.address)
+                            .includes(em.company_email)}
+                          onChange={() =>
+                            setRecipients((prev) =>
+                              prev.some((p) => p.address == em.company_email)
+                                ? prev.filter(
+                                    (p) => p.address != em.company_email
+                                  )
+                                : [
+                                    ...prev,
+                                    {
+                                      ["address"]: em.company_email,
+                                      ["name"]:
+                                        mails &&
+                                        mails.find((m) =>
+                                          m.email_ids.find(
+                                            (ems) =>
+                                              ems.company_email ==
+                                              em.company_email
+                                          )
+                                        ).company_name,
+                                    },
+                                  ]
+                            )
+                          }
+                          className="disabled:cursor-not-allowed h-4 w-4 ml-[1.5rem]"
+                        />
+                      </td>
+                      <td className="px-4 py-2">{em.id}</td>
+                      <td className="px-4 py-2">{em.company_email}</td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {addemail && (
         <div
           onClick={(e) => {
@@ -401,7 +638,7 @@ const Home = () => {
             e.preventDefault();
             setAddEmail(false);
           }}
-          className="absolute inset-0 z-10 bg-[rgba(255,255,255,0.5)] flex items-center justify-center"
+          className="absolute inset-0 z-10 bg-[rgba(255,255,255,0.7)] flex items-center justify-center"
         >
           <div
             onClick={(e) => e.stopPropagation()}
@@ -412,12 +649,12 @@ const Home = () => {
             </h1>
             <p>Add a new email</p>
             <form className="flex flex-col mt-[1rem] md:mt-[2rem] gap-5">
-              <div className="flex flex-col gap-1 w-[100%]">
+              {/* <div className="flex flex-col gap-1 w-[100%]">
                 <label htmlFor="c" className="font-medium">
                   Select Company
                 </label>
                 <select
-                  value={company_email}
+                  value={email_compny}
                   onChange={(e) => setEmailCompny(e.target.value)}
                   className="px-4 py-2 rounded-lg border-2"
                 >
@@ -437,6 +674,58 @@ const Home = () => {
                       )
                     )}
                 </select>
+              </div> */}
+              <div className="relative w-full">
+                <label
+                  htmlFor="searchable-select"
+                  className="block text-gray-700 font-medium mb-2"
+                >
+                  Select an Option
+                </label>
+                <input
+                  id="searchable-select"
+                  list="options-list"
+                  value={email_compny_label}
+                  onChange={(e) => {
+                    setEmailCompnyLabel(e.target.value);
+                    let email_id = companies.find(
+                      (c) => c.company_name == e.target.value
+                    )?.id;
+                    setEmailCompny(email_id);
+                  }}
+                  className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter Company name"
+                />
+                <datalist
+                  className="absolute top-full left-0 z-10 w-full bg-white border border-gray-300 rounded-lg mt-1"
+                  id="options-list"
+                >
+                  {companies &&
+                    companies.map((c) =>
+                      email_compny === c.id ? (
+                        <option
+                          className="px-4 py-2 hover:bg-gray-100"
+                          key={c.id}
+                          value={c.company_name}
+                        >
+                          {c.company_name}
+                        </option>
+                      ) : (
+                        <option
+                          className="px-4 py-2 hover:bg-gray-100"
+                          key={c.id}
+                          value={c.company_name}
+                        >
+                          {c.company_name}
+                        </option>
+                      )
+                    )}
+                </datalist>
+                {email_compny_label_error && (
+                  <p className="text-red-400">
+                    No company named {email_compny_label}
+                  </p>
+                )}
               </div>
               <div className="flex flex-col gap-1 w-[100%]">
                 <label htmlFor="email" className="font-medium">
@@ -479,7 +768,7 @@ const Home = () => {
             e.preventDefault();
             setDeleteEmail(false);
           }}
-          className="absolute inset-0 z-10 bg-[rgba(255,255,255,0.5)] flex items-center justify-center"
+          className="absolute inset-0 z-10 bg-[rgba(255,255,255,0.7)] flex items-center justify-center"
         >
           <div
             onClick={(e) => e.stopPropagation()}
@@ -514,7 +803,7 @@ const Home = () => {
             e.preventDefault();
             setDeleteCompany(false);
           }}
-          className="absolute inset-0 z-10 bg-[rgba(255,255,255,0.5)] flex items-center justify-center"
+          className="absolute inset-0 z-10 bg-[rgba(255,255,255,0.7)] flex items-center justify-center"
         >
           <div
             onClick={(e) => e.stopPropagation()}
@@ -546,7 +835,7 @@ const Home = () => {
         <Toaster richColors position="top-center" />
 
         {/* Email Draft Section */}
-        <div className="relative p-5 shadow-lg border-2 border-gray-200 rounded-lg h-fit max-h-auto w-[100%] md:w-[60%]">
+        <div className="relative p-5 shadow-lg border-2 border-gray-200 rounded-lg h-fit max-h-auto w-[100%] md:w-[57%]">
           <header className="flex my-2 justify-between p-5">
             <h1 className=" font-medium text-xl md:text-3xl">Email Draft</h1>
           </header>
@@ -615,7 +904,7 @@ const Home = () => {
         </div>
 
         {/* Sender email section */}
-        <div className="relative h-fit max-h-[85vh] overflow-y-scroll shadow-lg border-2 border-gray-200 rounded-lg p-5 mx-5 w-[100%] md:w-[35%]">
+        <div className="relative h-fit max-h-[85vh] overflow-y-scroll shadow-lg border-2 border-gray-200 rounded-lg p-5 w-[100%] md:w-[40%]">
           <header className="flex my-2 justify-between p-5">
             <h1 className=" font-medium text-xl md:text-3xl">List of Emails</h1>
             <button
@@ -641,7 +930,14 @@ const Home = () => {
               Send
             </button>
           </header>
-          <div className="flex items-center px-2 gap-1 border-2">
+          <button
+            onClick={() => setShowFilterEmail((prev) => !prev)}
+            className="px-4 py-2 my-3 rounded-xl w-fit mt-5 ml-auto flex gap-1 bg-black text-white whitespace-nowrap"
+          >
+            <Filter />
+            search Emails
+          </button>
+          <div className="flex items-center px-2 gap-1 border-2 w-full">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="24"
@@ -661,24 +957,51 @@ const Home = () => {
               type="text"
               value={searchfilter}
               onChange={(e) => setSearchFilter(e.target.value)}
-              placeholder="Search for emails here"
+              placeholder="Search for companies here"
               className="my-1 w-full px-3 py-2 rounded-lg"
               autoComplete="new-password"
               spellCheck="false"
               autoCorrect="off"
             />
           </div>
+
           <div className="overflow-x-auto w-[100%]">
             <table className=" shadow-md sm:rounded-lg p-4 min-w-full table-auto">
               <thead className=" font-semibold text-md">
                 <tr>
-                  <th className="px-4 py-2 text-left">Select</th>
+                  <th className="px-4 py-2 text-left">
+                    <input
+                      type="checkbox"
+                      disabled={processing == true}
+                      checked={select_all}
+                      onChange={(e) => {
+                        setSelectAll((prev) => !prev);
+                        if (e.target.checked) {
+                          let all = mails.map((m) => m.company_name);
+                          let mall = mails
+                            .map((m) =>
+                              m.email_ids.map((em) => ({
+                                ["address"]: em.company_email,
+                                ["name"]: m.company_name,
+                              }))
+                            )
+                            .flat();
+                          setAllCompanyEmails(all);
+                          setRecipients(mall);
+                        } else {
+                          setAllCompanyEmails([]);
+                          setRecipients([]);
+                        }
+                      }}
+                      className="disabled:cursor-not-allowed h-4 w-4"
+                    />
+                  </th>
                   <th className="px-4 py-2 text-left">Company</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredEmails &&
-                  filteredEmails.map((row, index) => (
+                {filteredCompanies &&
+                  filteredCompanies.map((row, index) => (
                     <React.Fragment key={index}>
                       <tr className={` border-b`}>
                         <td className="px-4 py-2">
@@ -753,6 +1076,19 @@ const Home = () => {
                             ) : (
                               <ArrowDownNarrowWide />
                             )}
+                          </button>
+                        </td>
+                        <td>
+                          <button
+                            onClick={() => {
+                              setEditCompany({
+                                ["company_name"]: row.company_name,
+                                ["companyID"]: row.id,
+                              });
+                              setShowEditCompany((prev) => !prev);
+                            }}
+                          >
+                            <Pen />
                           </button>
                         </td>
                         <td>
