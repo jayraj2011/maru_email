@@ -12,6 +12,17 @@ import { SendMailClient } from "zeptomail";
 import cluster from "cluster";
 import os from "node:os";
 
+const pool = mysql.createPool({
+  host: "localhost",
+  user: "root",
+  password: "",
+  database: "email_db",
+  waitForConnections: true,
+  queueLimit: 0, // Unlimited queue size
+});
+
+const db = pool.promise();
+
 const startServer = () => {
   const app = express();
   app.use(express.json());
@@ -488,107 +499,46 @@ const startServer = () => {
     res.json("server is running");
   });
 
-  app.get("/getMails", (req, res) => {
-    const connection = mysql.createConnection({
-      host: "localhost",
-      user: "root",
-      password: "",
-      database: "email_db",
-    });
+  app.get("/getMails", async (req, res) => {
+    const emails = await db.query("SELECT * FROM client_info");
 
-    // Connect to the database
-    connection.connect((err) => {
-      if (err) {
-        console.error("Error connecting to the database:", err.message);
-      } else {
-        console.log("Connected to the MySQL database.");
-      }
-    });
-
-    connection.query("SELECT * FROM client_info", (err, results) => {
-      if (err) {
-        console.error("Error executing query:", err.message);
-        return;
-      }
-      res.status(200).json(results);
-    });
-
-    // Close the connection
-    connection.end((err) => {
-      if (err) {
-        console.error("Error closing the connection:", err.message);
-        return;
-      }
-      console.log("Database connection closed.");
-    });
+    res.status(200).json(emails[0]);
   });
 
-  function queryDatabase(connection, query, params = []) {
-    return new Promise((resolve, reject) => {
-      connection.query(query, params, (err, results) => {
-        if (err) {
-          reject(err); // Reject the promise if there is an error
-        } else {
-          resolve(results); // Resolve the promise with the results
-        }
-      });
-    });
-  }
-
   app.get("/mails", async (req, res) => {
-    const connection = mysql.createConnection({
-      host: "localhost",
-      user: "root",
-      password: "",
-      database: "email_db",
-    });
-
-    // Connect to the database
-    connection.connect((err) => {
-      if (err) {
-        console.error("Error connecting to the database:", err.message);
-      } else {
-        console.log("Connected to the MySQL database.");
-      }
-    });
-
-    var query = "SELECT * FROM company";
     const query_result = [];
 
     try {
-      // Execute the first query (SELECT * FROM company)
-      const companies = await queryDatabase(connection, query);
+      // Execute the query (using JOIN or CTE)
+      const [companies] = await db.query(`
+        SELECT c.id AS company_id,
+              c.company_name,
+              GROUP_CONCAT(ci.company_email) AS company_emails
+        FROM company c
+        LEFT JOIN client_info ci ON c.id = ci.company_id
+        GROUP BY c.id, c.company_name;
+      `);
 
-      // For each company, execute a sub-query to fetch client info
+      // Map the result to include an array of emails
       for (let company of companies) {
-        const new_query = "SELECT * FROM client_info WHERE company_id=?";
-        const client_info = await queryDatabase(connection, new_query, [
-          company.id,
-        ]);
-
+        const email_ids = company.company_emails ? company.company_emails.split(',') : [];
+        
         const individual_company = {
-          id: company.id,
+          id: company.company_id,
           company_name: company.company_name,
-          email_ids: client_info,
+          email_ids: email_ids, // Array of emails
         };
 
         query_result.push(individual_company);
       }
+
+      console.log(query_result);
 
       // Send the result as JSON
       res.status(200).json(query_result);
     } catch (error) {
       console.error("Error during query execution:", error.message);
       res.status(500).json({ message: "Error processing request" });
-    } finally {
-      // Close the connection after all queries are complete
-      connection.end((err) => {
-        if (err) {
-          console.error("Error closing the connection:", err.message);
-        } else {
-          console.log("Database connection closed.");
-        }
-      });
     }
   });
 
