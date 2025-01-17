@@ -589,7 +589,13 @@ const startServer = () => {
           res.status(500).json({message: "Some Error Occurred, Please Try Again!"});
         }
       } else {
-        res.status(500).json({message: "Some Error Occurred, Please Try Again!"});
+        var query = "DELETE FROM company WHERE id=?";
+        const result = await db.query(query, [companyID]);
+        if (result[0].affectedRows > 0) {
+          res.status(200).json({message: "Company Deleted Successfully"});
+        } else {
+          res.status(500).json({message: "Some Error Occurred, Please Try Again!"});
+        }
       }
     } catch(err) {
       res.status(500).json({message: "Some Error Occurred, Please Try Again!"});
