@@ -73,15 +73,15 @@ const Home = () => {
   const [files, setFiles] = useState(null);
   const [subject, setSubject] = useState("");
 
+  const getMailsFromServer = async () => {
+    const mailsRes = await axios.get("http://localhost:4123/mails");
+    setMails(mailsRes.data);
+  };
+  const getCompaniesFromServer = async () => {
+    const companiesRes = await axios.get("http://localhost:4123/company");
+    setCompanies(companiesRes.data);
+  };
   useEffect(() => {
-    const getMailsFromServer = async () => {
-      const mailsRes = await axios.get("http://localhost:4123/mails");
-      setMails(mailsRes.data);
-    };
-    const getCompaniesFromServer = async () => {
-      const companiesRes = await axios.get("http://localhost:4123/company");
-      setCompanies(companiesRes.data);
-    };
     getCompaniesFromServer();
     getMailsFromServer();
   }, []);
@@ -234,6 +234,7 @@ const Home = () => {
       toast.success("Successfully added new company");
       setCompanyName("");
       setAddCompany(false);
+      await getMailsFromServer();
     } catch (error) {
       toast.error("Something went wrong. please try again laster");
       console.log(error);
@@ -259,6 +260,7 @@ const Home = () => {
       );
       setCompanyEmail("");
       setAddEmail(false);
+      await getMailsFromServer();
     } catch (error) {
       toast.error("Something went wrong. please try again laster");
       console.log(error);
@@ -268,13 +270,15 @@ const Home = () => {
   const handleDeleteEmail = async (e) => {
     e.preventDefault();
     try {
+      console.log(email_to_delte.id)
       const res = await axios.delete("http://localhost:4123/email", {
-        ["id"]: Number(email_to_delte.id),
+        data: {"id": Number(email_to_delte.id)},
       });
       console.log("res", res);
       toast.success("Successfully deleted email");
       setEmailToDelete(null);
       setDeleteEmail(false);
+      await getMailsFromServer();
     } catch (error) {
       toast.error("Something went wrong. please try again laster");
       console.log(error);
@@ -285,7 +289,7 @@ const Home = () => {
     e.preventDefault();
     try {
       const res = await axios.delete("http://localhost:4123/company", {
-        ["companyID"]: Number(company_to_delte.companyID),
+        data: {"companyID": Number(company_to_delte.companyID)},
       });
       console.log("res", res);
       toast.success("Successfully deleted company");
@@ -376,7 +380,7 @@ const Home = () => {
                   onClick={() => setAddCompany(false)}
                   className="px-3 py-2 rounded-lg bg-red-800 text-white"
                 >
-                  Camcel
+                  Cancel
                 </button>
                 <button
                   onClick={(e) => handleAddCompany(e)}
@@ -421,11 +425,17 @@ const Home = () => {
                     Select a Company
                   </option>
                   {companies &&
-                    companies.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.company_name}
-                      </option>
-                    ))}
+                    companies.map((c) =>
+                      email_compny === c.id ? (
+                        <option key={c.id} value={c.id} selected>
+                          {c.company_name}
+                        </option>
+                      ) : (
+                        <option key={c.id} value={c.id}>
+                          {c.company_name}
+                        </option>
+                      )
+                    )}
                 </select>
               </div>
               <div className="flex flex-col gap-1 w-[100%]">
@@ -448,7 +458,7 @@ const Home = () => {
                   onClick={() => setAddEmail(false)}
                   className="px-3 py-2 rounded-lg bg-red-800 text-white"
                 >
-                  Camcel
+                  Cancel
                 </button>
                 <button
                   onClick={(e) => handleAddEmail(e)}
@@ -484,7 +494,7 @@ const Home = () => {
                 onClick={() => setDeleteEmail(false)}
                 className="px-3 py-2 rounded-lg bg-black text-white"
               >
-                Camcel
+                Cancel
               </button>
               <button
                 onClick={(e) => handleDeleteEmail(e)}
@@ -519,7 +529,7 @@ const Home = () => {
                 onClick={() => setDeleteCompany(false)}
                 className="px-3 py-2 rounded-lg bg-black text-white"
               >
-                Camcel
+                Cancel
               </button>
               <button
                 onClick={(e) => handleDeleteCompany(e)}
