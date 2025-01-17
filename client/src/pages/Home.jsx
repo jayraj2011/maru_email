@@ -72,19 +72,20 @@ const Home = () => {
   const [mails, setMails] = useState(null);
   const [files, setFiles] = useState(null);
   const [subject, setSubject] = useState("");
+  const [refresh, setRefresh] = useState(false);
 
-  const getMailsFromServer = async () => {
-    const mailsRes = await axios.get("http://localhost:4123/mails");
-    setMails(mailsRes.data);
-  };
-  const getCompaniesFromServer = async () => {
-    const companiesRes = await axios.get("http://localhost:4123/company");
-    setCompanies(companiesRes.data);
-  };
   useEffect(() => {
+    const getMailsFromServer = async () => {
+      const mailsRes = await axios.get("http://localhost:4123/mails");
+      setMails(mailsRes.data);
+    };
+    const getCompaniesFromServer = async () => {
+      const companiesRes = await axios.get("http://localhost:4123/company");
+      setCompanies(companiesRes.data);
+    };
     getCompaniesFromServer();
     getMailsFromServer();
-  }, []);
+  }, [refresh]);
 
   const modules = {
     toolbar: {
@@ -234,7 +235,7 @@ const Home = () => {
       toast.success("Successfully added new company");
       setCompanyName("");
       setAddCompany(false);
-      await getMailsFromServer();
+      setRefresh((prev) => !prev);
     } catch (error) {
       toast.error("Something went wrong. please try again laster");
       console.log(error);
@@ -252,7 +253,7 @@ const Home = () => {
         ["company_id"]: Number(email_compny),
         ["company_email"]: company_email,
       });
-      console.log("company_res", res.data);
+
       toast.success(
         `Successfully added new email for${
           companies.find((c) => c.id == email_compny).company_name
@@ -260,7 +261,7 @@ const Home = () => {
       );
       setCompanyEmail("");
       setAddEmail(false);
-      await getMailsFromServer();
+      setRefresh((prev) => !prev);
     } catch (error) {
       toast.error("Something went wrong. please try again laster");
       console.log(error);
@@ -270,15 +271,15 @@ const Home = () => {
   const handleDeleteEmail = async (e) => {
     e.preventDefault();
     try {
-      console.log(email_to_delte.id)
+      console.log(email_to_delte.id);
       const res = await axios.delete("http://localhost:4123/email", {
-        data: {"id": Number(email_to_delte.id)},
+        data: { id: Number(email_to_delte.id) },
       });
-      console.log("res", res);
+      // console.log("res", res);
       toast.success("Successfully deleted email");
       setEmailToDelete(null);
       setDeleteEmail(false);
-      await getMailsFromServer();
+      setRefresh((prev) => !prev);
     } catch (error) {
       toast.error("Something went wrong. please try again laster");
       console.log(error);
@@ -289,12 +290,13 @@ const Home = () => {
     e.preventDefault();
     try {
       const res = await axios.delete("http://localhost:4123/company", {
-        data: {"companyID": Number(company_to_delte.companyID)},
+        data: { companyID: Number(company_to_delte.companyID) },
       });
       console.log("res", res);
       toast.success("Successfully deleted company");
       setCompanyToDelete(null);
       setDeleteCompany(false);
+      setRefresh((prev) => !prev);
     } catch (error) {
       toast.error("Something went wrong. please try again laster");
       console.log(error);
@@ -302,13 +304,11 @@ const Home = () => {
   };
 
   const filteredEmails = useMemo(() => {
-    return (
-      mails &&
-      mails.filter((row) =>
-        row.company_name.toLowerCase().includes(searchfilter.toLowerCase())
-      )
+    if (!mails) return [];
+    return mails.filter((row) =>
+      row.company_name.toLowerCase().includes(searchfilter.toLowerCase())
     );
-  });
+  }, [mails, searchfilter]);
 
   // console.log("recipients", recipients);
   // console.log("filteredEmails", filteredEmails);
