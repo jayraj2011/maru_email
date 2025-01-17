@@ -514,7 +514,6 @@ const startServer = () => {
 
       // Map the result to include an array of emails
       for (let company of companies) {
-        console.log(company);
         const email_ids = company.company_emails ? company.company_emails.split(',') : [];
         const idsArray = company.company_emails_ids ? company.company_emails_ids.split(','): [];
 
@@ -533,8 +532,6 @@ const startServer = () => {
         query_result.push(individual_company);
       }
 
-      console.log(query_result);
-
       // Send the result as JSON
       res.status(200).json(query_result);
     } catch (error) {
@@ -547,7 +544,6 @@ const startServer = () => {
     var query = "SELECT * FROM company";
     try{
       const companies = await db.query(query);
-      console.log(companies);
       res.status(200).json(companies[0]);
     } catch(err) {
       res.status(500).json({message: "Some Error Occured, Please Try Again after sometime!!"});
@@ -612,6 +608,8 @@ const startServer = () => {
 
   app.delete("/email", async (req, res) => {
     const { id } = req.body;
+
+    console.log(id);
 
     try{
       const result = await db.query("DELETE FROM client_info WHERE id=?", [id]);
