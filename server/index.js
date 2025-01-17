@@ -6,22 +6,11 @@ import path from "path";
 import juice from "juice";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
-import mysql from "mysql2";
 import fs from "fs";
 import { SendMailClient } from "zeptomail";
 import cluster from "cluster";
 import os from "node:os";
-
-const pool = mysql.createPool({
-  host: "localhost",
-  user: "root",
-  password: "",
-  database: "email_db",
-  waitForConnections: true,
-  queueLimit: 0, // Unlimited queue size
-});
-
-const db = pool.promise();
+import { db } from "./db.js";
 
 const startServer = () => {
   const app = express();
@@ -545,60 +534,18 @@ const startServer = () => {
     }
   });
 
-  app.get("/company", (req, res) => {
-    const connection = mysql.createConnection({
-      host: "localhost",
-      user: "root",
-      password: "",
-      database: "email_db",
-    });
-
-    // Connect to the database
-    connection.connect((err) => {
-      if (err) {
-        console.error("Error connecting to the database:", err.message);
-      } else {
-        console.log("Connected to the MySQL database.");
-      }
-    });
-
+  app.get("/company", async (req, res) => {
     var query = "SELECT * FROM company";
-
-    connection.query(query, (err, results) => {
-      if (err) {
-        console.error("Error executing query:", err.message);
-        return;
-      }
-      res.status(200).json(results);
-    });
-
-    // Close the connection
-    connection.end((err) => {
-      if (err) {
-        console.error("Error closing the connection:", err.message);
-        return;
-      }
-      console.log("Database connection closed.");
-    });
+    try{
+      const companies = await db.query(query);
+      console.log(companies);
+      res.status(200).json(companies[0]);
+    } catch(err) {
+      res.status(500).json({message: "Some Error Occured, Please Try Again after sometime!!"});
+    }
   });
 
-  app.post("/company", (req, res) => {
-    const connection = mysql.createConnection({
-      host: "localhost",
-      user: "root",
-      password: "",
-      database: "email_db",
-    });
-
-    // Connect to the database
-    connection.connect((err) => {
-      if (err) {
-        console.error("Error connecting to the database:", err.message);
-      } else {
-        console.log("Connected to the MySQL database.");
-      }
-    });
-
+  app.post("/company", async (req, res) => {
     const { company_name } = req.body;
 
     if (company_name == "") {
@@ -607,64 +554,35 @@ const startServer = () => {
         .json({ message: "Data is emptty, please provide valid data!" });
     }
 
-    console.log("company_name", company_name);
+    // console.log("company_name", company_name);
     var query = "INSERT INTO company (company_name) VALUES(?)";
 
-    connection.query(query, [company_name], (err, results) => {
-      if (err) {
-        console.error("Error executing query:", err.message);
-        return;
+    try{
+      const result = await db.query(query, [company_name]);
+      if (result[0].affectedRows > 0) {
+        res.status(200).json({message: "Company Inserted Successfully"});
+      } else {
+        res.status(500).json({message: "Some Error Occurred, Please Try Again!"});
       }
-      res.status(200).json(results);
-    });
-
-    // Close the connection
-    connection.end((err) => {
-      if (err) {
-        console.error("Error closing the connection:", err.message);
-        return;
-      }
-      console.log("Database connection closed.");
-    });
+    } catch(err) {
+      res.status(500).json({message: "Some Error Occurred, Please Try Again!"});
+    }
   });
 
-  app.delete("/company", (req, res) => {
-    const connection = mysql.createConnection({
-      host: "localhost",
-      user: "root",
-      password: "",
-      database: "email_db",
-    });
-
+  app.delete("/company", async (req, res) => {
     const { companyID } = req.body;
 
-    // Connect to the database
-    connection.connect((err) => {
-      if (err) {
-        console.error("Error connecting to the database:", err.message);
-      } else {
-        console.log("Connected to the MySQL database.");
-      }
-    });
-
     var query = "DELETE FROM company WHERE id=?";
-
-    connection.query(query, [companyID], (err, results) => {
-      if (err) {
-        console.error("Error executing query:", err.message);
-        return;
+    try {
+      const result = await db.query(query, [companyID]);
+      if (result[0].affectedRows > 0) {
+        res.status(200).json({message: "Company Deleted Successfully"});
+      } else {
+        res.status(500).json({message: "Some Error Occurred, Please Try Again!"});
       }
-      res.status(200).json(results);
-    });
-
-    // Close the connection
-    connection.end((err) => {
-      if (err) {
-        console.error("Error closing the connection:", err.message);
-        return;
-      }
-      console.log("Database connection closed.");
-    });
+    } catch(err) {
+      res.status(500).json({message: "Some Error Occurred, Please Try Again!"});
+    }
   });
 
   app.post("/email", (req, res) => {
