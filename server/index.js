@@ -581,7 +581,6 @@ const startServer = () => {
       var email_delete_query = "DELETE FROM client_info WHERE company_id=?";
       const email_result = await db.query(email_delete_query, [companyID]);
       if (email_result[0].affectedRows > 0) {
-        res.status(200).json({message: "Company Deleted Successfully"});
         var query = "DELETE FROM company WHERE id=?";
         const result = await db.query(query, [companyID]);
         if (result[0].affectedRows > 0) {
