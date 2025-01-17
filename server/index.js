@@ -505,7 +505,8 @@ const startServer = () => {
       const [companies] = await db.query(`
         SELECT c.id AS company_id,
               c.company_name,
-              GROUP_CONCAT(ci.company_email) AS company_emails
+              GROUP_CONCAT(ci.company_email) AS company_emails,
+              GROUP_CONCAT(ci.id) AS company_emails_ids
         FROM company c
         LEFT JOIN client_info ci ON c.id = ci.company_id
         GROUP BY c.id, c.company_name;
@@ -513,12 +514,20 @@ const startServer = () => {
 
       // Map the result to include an array of emails
       for (let company of companies) {
+        console.log(company);
         const email_ids = company.company_emails ? company.company_emails.split(',') : [];
+        const idsArray = company.company_emails_ids ? company.company_emails_ids.split(','): [];
+
+        const email_id_mapping = email_ids.map((email, index) => ({
+          company_email: email,
+          id: idsArray[index]
+        }));
+
         
         const individual_company = {
           id: company.company_id,
           company_name: company.company_name,
-          email_ids: email_ids, // Array of emails
+          email_ids: email_id_mapping, // Array of emails
         };
 
         query_result.push(individual_company);
@@ -585,86 +594,35 @@ const startServer = () => {
     }
   });
 
-  app.post("/email", (req, res) => {
-    const connection = mysql.createConnection({
-      host: "localhost",
-      user: "root",
-      password: "",
-      database: "email_db",
-    });
-
-    // Connect to the database
-    connection.connect((err) => {
-      if (err) {
-        console.error("Error connecting to the database:", err.message);
-      } else {
-        console.log("Connected to the MySQL database.");
-      }
-    });
-
+  app.post("/email", async (req, res) => {
     const { company_id, company_email } = req.body;
 
-    connection.query(
-      "INSERT INTO client_info (company_id, company_email) VALUES (?, ?)",
-      [company_id, company_email],
-      (err, results) => {
-        if (err) {
-          console.error("Error executing query:", err.message);
-          return;
-        }
-        res.status(200).json(results);
+    try{
+      const result = await db.query("INSERT INTO client_info (company_id, company_email) VALUES (?, ?)",
+      [company_id, company_email])
+      if (result[0].affectedRows > 0) {
+        res.status(200).json({message: "Company Deleted Successfully"});
+      } else {
+        res.status(500).json({message: "Some Error Occurred, Please Try Again!"});
       }
-    );
-
-    // Close the connection
-    connection.end((err) => {
-      if (err) {
-        console.error("Error closing the connection:", err.message);
-        return;
-      }
-      console.log("Database connection closed.");
-    });
+    } catch(err) {
+      res.status(500).json({message: "Some Error Occurred, Please Try Again!"});
+    }
   });
 
-  app.delete("/email", (req, res) => {
-    const connection = mysql.createConnection({
-      host: "localhost",
-      user: "root",
-      password: "",
-      database: "email_db",
-    });
-
-    // Connect to the database
-    connection.connect((err) => {
-      if (err) {
-        console.error("Error connecting to the database:", err.message);
-      } else {
-        console.log("Connected to the MySQL database.");
-      }
-    });
-
+  app.delete("/email", async (req, res) => {
     const { id } = req.body;
 
-    connection.query(
-      "DELETE FROM client_info WHERE id=?",
-      [id],
-      (err, results) => {
-        if (err) {
-          console.error("Error executing query:", err.message);
-          return;
-        }
-        res.status(200).json(results);
+    try{
+      const result = await db.query("DELETE FROM client_info WHERE id=?", [id]);
+      if (result[0].affectedRows > 0) {
+        res.status(200).json({message: "Company Deleted Successfully"});
+      } else {
+        res.status(500).json({message: "Some Error Occurred, Please Try Again!"});
       }
-    );
-
-    // Close the connection
-    connection.end((err) => {
-      if (err) {
-        console.error("Error closing the connection:", err.message);
-        return;
-      }
-      console.log("Database connection closed.");
-    });
+    } catch(err) {
+      res.status(500).json({message: "Some Error Occurred, Please Try Again!"});
+    }
   });
 
   app.listen(4123, () => {
