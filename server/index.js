@@ -500,9 +500,12 @@ const startServer = () => {
   });
 
   app.get("/getMails", async (req, res) => {
-    const emails = await db.query("SELECT * FROM client_info");
-
-    res.status(200).json(emails[0]);
+    try {
+      const emails = await db.query("SELECT * FROM client_info");
+      res.status(200).json(emails[0])
+    } catch(e) {
+      res.status(500).json({message: "Some Error Occured, Please Try Again After Sometime"});
+    }
   });
 
   app.get("/mails", async (req, res) => {
