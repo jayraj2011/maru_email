@@ -16,11 +16,9 @@ const startServer = () => {
   const app = express();
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
-  app.use(
-    cors({
-      origin: ["http://localhost:5173", "http://localhost:5174"],
-    })
-  );
+  app.use(cors());
+
+  // ["http://localhost:5173", "http://localhost:5174", "http://192.168.29.230:5173/"]
 
   // const transporter = nodemailer.createTransport({
   //   // service: "Gmail",
@@ -564,12 +562,9 @@ const startServer = () => {
 
     try{
       const result = await db.query(query, [company_name]);
-      if (result[0].affectedRows > 0) {
-        res.status(200).json({message: "Company Inserted Successfully"});
-      } else {
-        res.status(500).json({message: "Some Error Occurred, Please Try Again!"});
-      }
+      res.status(200).json({message: "Company Inserted Successfully"});
     } catch(err) {
+      console.log(err);
       res.status(500).json({message: "Some Error Occurred, Please Try Again!"});
     }
   });
@@ -601,6 +596,22 @@ const startServer = () => {
       res.status(500).json({message: "Some Error Occurred, Please Try Again!"});
     }
   });
+
+  app.put("/company", async (req, res) => {
+    const {
+      companyID,
+      company_name
+    } = req.body;
+
+    var query = "UPDATE company SET company_name=? WHERE id=?";
+
+    try{
+      const result = await db.query(query, [company_name, companyID]);
+      res.status(200).json({message: "Company Name Updated Successfully!"});
+    } catch(err) {
+      res.status(500).json({message: "Some Error Occurred, Please Try Again!"});
+    }
+  })
 
   app.post("/email", async (req, res) => {
     const { company_id, company_email } = req.body;

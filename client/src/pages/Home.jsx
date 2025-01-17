@@ -76,11 +76,11 @@ const Home = () => {
 
   useEffect(() => {
     const getMailsFromServer = async () => {
-      const mailsRes = await axios.get("http://localhost:4123/mails");
+      const mailsRes = await axios.get("http://192.168.29.230:4123/mails");
       setMails(mailsRes.data);
     };
     const getCompaniesFromServer = async () => {
-      const companiesRes = await axios.get("http://localhost:4123/company");
+      const companiesRes = await axios.get("http://192.168.29.230:4123/company");
       setCompanies(companiesRes.data);
     };
     getCompaniesFromServer();
@@ -205,7 +205,7 @@ const Home = () => {
 
       formData.append("subject", subject);
 
-      const res = await axios.post("http://localhost:4123/send", formData, {
+      const res = await axios.post("http://192.168.29.230:4123/send", formData, {
         headers: {
           "Content-Type": "multipart/form-data", // Ensure the content type is set
         },
@@ -229,7 +229,7 @@ const Home = () => {
         toast.error("No Company name provided");
       }
 
-      const res = await axios.post("http://localhost:4123/company", {
+      const res = await axios.post("http://192.168.29.230:4123/company", {
         ["company_name"]: company_name,
       });
       toast.success("Successfully added new company");
@@ -249,7 +249,7 @@ const Home = () => {
         toast.error("No email provided");
       }
 
-      const res = await axios.post("http://localhost:4123/email", {
+      const res = await axios.post("http://192.168.29.230:4123/email", {
         ["company_id"]: Number(email_compny),
         ["company_email"]: company_email,
       });
@@ -272,7 +272,7 @@ const Home = () => {
     e.preventDefault();
     try {
       console.log(email_to_delte.id);
-      const res = await axios.delete("http://localhost:4123/email", {
+      const res = await axios.delete("http://192.168.29.230:4123/email", {
         data: { id: Number(email_to_delte.id) },
       });
       // console.log("res", res);
@@ -289,7 +289,7 @@ const Home = () => {
   const handleDeleteCompany = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.delete("http://localhost:4123/company", {
+      const res = await axios.delete("http://192.168.29.230:4123/company", {
         data: { companyID: Number(company_to_delte.companyID) },
       });
       console.log("res", res);
