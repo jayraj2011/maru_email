@@ -11,12 +11,30 @@ import { SendMailClient } from "zeptomail";
 import cluster from "cluster";
 import os from "node:os";
 import { db } from "./db.js";
+import http from "http";
+import { Server } from "socket.io";
 
 const startServer = () => {
   const app = express();
+  const server = http.createServer(app);
+  const io = new Server(server, {
+    cors: {
+      origin: "http://localhost:5173",
+      transports: ["websocket", "polling"],
+    },
+    allowEIO3: true,
+    pingTimeout: 1000 * 60 * 60,
+    pingInterval: 25000,
+    maxHttpBufferSize: 1e7,
+  });
+
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
-  app.use(cors());
+  app.use(
+    cors({
+      origin: "http://localhost:5173",
+    })
+  );
 
   // ["http://localhost:5173", "http://localhost:5174", "http://192.168.29.230:5173/"]
 
@@ -256,6 +274,14 @@ const startServer = () => {
   // Include these styles in the Juice options
   const juiceOptions = { extraCss: quillStyles };
 
+  io.on("connection", (socket) => {
+    console.log("A user connected");
+
+    socket.on("disconnect", () => {
+      console.log("A user disconnected");
+    });
+  });
+
   app.post("/sends", upload.array("attachment", 5), (req, res) => {
     try {
       const { recipients, mailContent, subject } = req.body;
@@ -489,9 +515,11 @@ const startServer = () => {
   app.get("/getMails", async (req, res) => {
     try {
       const emails = await db.query("SELECT * FROM client_info");
-      res.status(200).json(emails[0])
-    } catch(e) {
-      res.status(500).json({message: "Some Error Occured, Please Try Again After Sometime"});
+      res.status(200).json(emails[0]);
+    } catch (e) {
+      res.status(500).json({
+        message: "Some Error Occured, Please Try Again After Sometime",
+      });
     }
   });
 
@@ -512,15 +540,18 @@ const startServer = () => {
 
       // Map the result to include an array of emails
       for (let company of companies) {
-        const email_ids = company.company_emails ? company.company_emails.split(',') : [];
-        const idsArray = company.company_emails_ids ? company.company_emails_ids.split(','): [];
+        const email_ids = company.company_emails
+          ? company.company_emails.split(",")
+          : [];
+        const idsArray = company.company_emails_ids
+          ? company.company_emails_ids.split(",")
+          : [];
 
         const email_id_mapping = email_ids.map((email, index) => ({
           company_email: email,
-          id: idsArray[index]
+          id: idsArray[index],
         }));
 
-        
         const individual_company = {
           id: company.company_id,
           company_name: company.company_name,
@@ -540,11 +571,13 @@ const startServer = () => {
 
   app.get("/company", async (req, res) => {
     var query = "SELECT * FROM company";
-    try{
+    try {
       const companies = await db.query(query);
       res.status(200).json(companies[0]);
-    } catch(err) {
-      res.status(500).json({message: "Some Error Occured, Please Try Again after sometime!!"});
+    } catch (err) {
+      res.status(500).json({
+        message: "Some Error Occured, Please Try Again after sometime!!",
+      });
     }
   });
 
@@ -560,12 +593,15 @@ const startServer = () => {
     // console.log("company_name", company_name);
     var query = "INSERT INTO company (company_name) VALUES(?)";
 
-    try{
+    try {
       const result = await db.query(query, [company_name]);
-      res.status(200).json({message: "Company Inserted Successfully"});
-    } catch(err) {
+      io.emit("add_company", company_name);
+      res.status(200).json({ message: "Company Inserted Successfully" });
+    } catch (err) {
       console.log(err);
-      res.status(500).json({message: "Some Error Occurred, Please Try Again!"});
+      res
+        .status(500)
+        .json({ message: "Some Error Occurred, Please Try Again!" });
     }
   });
 
@@ -579,74 +615,92 @@ const startServer = () => {
         var query = "DELETE FROM company WHERE id=?";
         const result = await db.query(query, [companyID]);
         if (result[0].affectedRows > 0) {
-          res.status(200).json({message: "Company Deleted Successfully"});
+          io.emit("delete_company", "");
+          res.status(200).json({ message: "Company Deleted Successfully" });
         } else {
-          res.status(500).json({message: "Some Error Occurred, Please Try Again!"});
+          res
+            .status(500)
+            .json({ message: "Some Error Occurred, Please Try Again!" });
         }
       } else {
         var query = "DELETE FROM company WHERE id=?";
         const result = await db.query(query, [companyID]);
         if (result[0].affectedRows > 0) {
-          res.status(200).json({message: "Company Deleted Successfully"});
+          io.emit("delete_company", "");
+          res.status(200).json({ message: "Company Deleted Successfully" });
         } else {
-          res.status(500).json({message: "Some Error Occurred, Please Try Again!"});
+          res
+            .status(500)
+            .json({ message: "Some Error Occurred, Please Try Again!" });
         }
       }
-    } catch(err) {
-      res.status(500).json({message: "Some Error Occurred, Please Try Again!"});
+    } catch (err) {
+      res
+        .status(500)
+        .json({ message: "Some Error Occurred, Please Try Again!" });
     }
   });
 
   app.put("/company", async (req, res) => {
-    const {
-      companyID,
-      company_name
-    } = req.body;
+    const { companyID, company_name } = req.body;
 
     var query = "UPDATE company SET company_name=? WHERE id=?";
 
-    try{
+    try {
       const result = await db.query(query, [company_name, companyID]);
-      res.status(200).json({message: "Company Name Updated Successfully!"});
-    } catch(err) {
-      res.status(500).json({message: "Some Error Occurred, Please Try Again!"});
+      io.emit("update_company", company_name);
+      res.status(200).json({ message: "Company Name Updated Successfully!" });
+    } catch (err) {
+      res
+        .status(500)
+        .json({ message: "Some Error Occurred, Please Try Again!" });
     }
-  })
+  });
 
   app.post("/email", async (req, res) => {
     const { company_id, company_email } = req.body;
 
-    try{
-      const result = await db.query("INSERT INTO client_info (company_id, company_email) VALUES (?, ?)",
-      [company_id, company_email])
+    try {
+      const result = await db.query(
+        "INSERT INTO client_info (company_id, company_email) VALUES (?, ?)",
+        [company_id, company_email]
+      );
       if (result[0].affectedRows > 0) {
-        res.status(200).json({message: "Company Deleted Successfully"});
+        res.status(200).json({ message: "Email Created Successfully" });
+        io.emit("add_email", company_email);
       } else {
-        res.status(500).json({message: "Some Error Occurred, Please Try Again!"});
+        res
+          .status(500)
+          .json({ message: "Some Error Occurred, Please Try Again!" });
       }
-    } catch(err) {
-      res.status(500).json({message: "Some Error Occurred, Please Try Again!"});
+    } catch (err) {
+      res
+        .status(500)
+        .json({ message: "Some Error Occurred, Please Try Again!" });
     }
   });
 
   app.delete("/email", async (req, res) => {
     const { id } = req.body;
 
-    console.log(id);
-
-    try{
+    try {
       const result = await db.query("DELETE FROM client_info WHERE id=?", [id]);
       if (result[0].affectedRows > 0) {
-        res.status(200).json({message: "Company Deleted Successfully"});
+        io.emit("delete_email", "email");
+        res.status(200).json({ message: "Email Deleted Successfully" });
       } else {
-        res.status(500).json({message: "Some Error Occurred, Please Try Again!"});
+        res
+          .status(500)
+          .json({ message: "Some Error Occurred, Please Try Again!" });
       }
-    } catch(err) {
-      res.status(500).json({message: "Some Error Occurred, Please Try Again!"});
+    } catch (err) {
+      res
+        .status(500)
+        .json({ message: "Some Error Occurred, Please Try Again!" });
     }
   });
 
-  app.listen(4123, () => {
+  server.listen(4123, () => {
     console.log(`Worker ${process.pid} is running on http://localhost:4123`);
   });
 };
