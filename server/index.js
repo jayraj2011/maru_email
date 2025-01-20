@@ -11,12 +11,33 @@ import { SendMailClient } from "zeptomail";
 import cluster from "cluster";
 import os from "node:os";
 import { db } from "./db.js";
+import {} from 'dotenv/config';
+import jwt from "jsonwebtoken";
+import cookieParser from "cookie-parser";
+
+function checkJWTToken(req, res, next) {
+  const authCookie = req.cookies['authcookie'];
+
+    // If there is no cookie, return an error
+  if(authCookie == null) return res.sendStatus(401);
+
+  jwt.verify(token, process.env.TOKEN_SECRET, (err, user) => {
+    console.log(err);
+
+    if (err) return res.sendStatus(403)
+
+    req.user = user
+
+    next()
+  })
+}
 
 const startServer = () => {
   const app = express();
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   app.use(cors());
+  app.use(cookieParser());
 
   // ["http://localhost:5173", "http://localhost:5174", "http://192.168.29.230:5173/"]
 
@@ -256,7 +277,7 @@ const startServer = () => {
   // Include these styles in the Juice options
   const juiceOptions = { extraCss: quillStyles };
 
-  app.post("/sends", upload.array("attachment", 5), (req, res) => {
+  app.post("/sends", checkJWTToken, upload.array("attachment", 5), (req, res) => {
     try {
       const { recipients, mailContent, subject } = req.body;
 
@@ -357,6 +378,77 @@ const startServer = () => {
     }
   });
 
+  app.post("/login", async (req, res) => {
+    const {user_email, user_password} = req.body;
+
+    var email_query = "SELECT * FROM user_details WHERE user_email=?";
+    const [email_response] = await db.query(email_query, [user_email]);
+
+    if (email_response.length === 0) {
+      res.status(500).json({message: "User Email or Password is invalid"});
+    }
+
+    if (email_response[0].password !== user_password) {
+      res.status(500).json({message: "User Email or Password is invalid in pass"})
+    }
+
+    const accessToken = jwt.sign({
+      username: email_response[0].user_email,
+    }, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: '10m'
+    });
+
+    const refreshToken = jwt.sign({
+      username: email_response[0].user_email,
+    }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '1d' });
+
+    res.cookie('jwt', refreshToken, {
+      httpOnly: true,
+      sameSite: 'None', secure: true,
+      maxAge: 24 * 60 * 60 * 1000
+    });
+    
+    return res.json({ accessToken });
+  });
+
+  app.post('/refresh', async (req, res) => {
+    if (req.cookies?.jwt) {
+
+      // Destructuring refreshToken from cookie
+      const refreshToken = req.cookies.jwt;
+
+      // Verifying refresh token
+      jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET,
+          async (err, decoded) => {
+            if (err) {
+
+              // Wrong Refesh Token
+              return res.status(406).json({ message: 'Unauthorized' });
+            }
+            else {
+
+              // Correct token we send a new access token
+              
+              var email_query = "SELECT * FROM user_details WHERE user_email=?";
+              const [email_response] = await db.query(email_query, [decoded.username]);
+
+              if (email_response.length === 0) {
+                return res.status(406).json({ message: 'Unauthorized' });
+              }
+
+              const accessToken = jwt.sign({
+                  username: email_response[0].user_email,
+              }, process.env.ACCESS_TOKEN_SECRET, {
+                  expiresIn: '10m'
+              });
+              return res.json({ accessToken });
+            }
+          })
+    } else {
+      return res.status(406).json({ message: 'Unauthorized in else' });
+    }
+  })
+
   // app.post("/send", upload.array("attachment", 5), async (req, res) => {
   //   try {
   //     const { recipients, mailContent, subject } = req.body;
@@ -417,7 +509,7 @@ const startServer = () => {
   //   }
   // });
 
-  app.post("/send", upload.array("attachment", 5), async (req, res) => {
+  app.post("/send", checkJWTToken, upload.array("attachment", 5), async (req, res) => {
     try {
       const { recipients, mailContent, subject } = req.body;
 
@@ -486,7 +578,7 @@ const startServer = () => {
     res.json("server is running");
   });
 
-  app.get("/getMails", async (req, res) => {
+  app.get("/getMails", checkJWTToken, async (req, res) => {
     try {
       const emails = await db.query("SELECT * FROM client_info");
       res.status(200).json(emails[0])
@@ -495,7 +587,7 @@ const startServer = () => {
     }
   });
 
-  app.get("/mails", async (req, res) => {
+  app.get("/mails", checkJWTToken, async (req, res) => {
     const query_result = [];
 
     try {
@@ -538,7 +630,7 @@ const startServer = () => {
     }
   });
 
-  app.get("/company", async (req, res) => {
+  app.get("/company", checkJWTToken, async (req, res) => {
     var query = "SELECT * FROM company";
     try{
       const companies = await db.query(query);
@@ -548,7 +640,7 @@ const startServer = () => {
     }
   });
 
-  app.post("/company", async (req, res) => {
+  app.post("/company", checkJWTToken, async (req, res) => {
     const { company_name } = req.body;
 
     if (company_name == "") {
@@ -569,7 +661,7 @@ const startServer = () => {
     }
   });
 
-  app.delete("/company", async (req, res) => {
+  app.delete("/company", checkJWTToken, async (req, res) => {
     const { companyID } = req.body;
 
     try {
@@ -597,7 +689,7 @@ const startServer = () => {
     }
   });
 
-  app.put("/company", async (req, res) => {
+  app.put("/company", checkJWTToken, async (req, res) => {
     const {
       companyID,
       company_name
@@ -613,7 +705,7 @@ const startServer = () => {
     }
   })
 
-  app.post("/email", async (req, res) => {
+  app.post("/email", checkJWTToken, async (req, res) => {
     const { company_id, company_email } = req.body;
 
     try{
@@ -629,7 +721,7 @@ const startServer = () => {
     }
   });
 
-  app.delete("/email", async (req, res) => {
+  app.delete("/email", checkJWTToken, async (req, res) => {
     const { id } = req.body;
 
     console.log(id);
