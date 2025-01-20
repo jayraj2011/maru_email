@@ -422,7 +422,7 @@ const startServer = () => {
     const accessToken = jwt.sign({
       username: email_response[0].user_email,
     }, process.env.ACCESS_TOKEN_SECRET, {
-        expiresIn: '10s'
+        expiresIn: '10m'
     });
 
     const refreshToken = jwt.sign({
@@ -439,6 +439,7 @@ const startServer = () => {
   });
 
   app.post('/refresh', async (req, res) => {
+    console.log(req.cookies);
     if (req.cookies?.jwt) {
 
       // Destructuring refreshToken from cookie
@@ -466,7 +467,7 @@ const startServer = () => {
               const accessToken = jwt.sign({
                   username: email_response[0].user_email,
               }, process.env.ACCESS_TOKEN_SECRET, {
-                  expiresIn: '10s'
+                  expiresIn: '10m'
               });
               return res.json({ accessToken });
             }
