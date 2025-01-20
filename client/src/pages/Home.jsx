@@ -12,11 +12,13 @@ import {
   ArrowUpNarrowWide,
   Filter,
   Pen,
+  Search,
   Trash2,
 } from "lucide-react";
 import ReactQuill, { Quill } from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import ImageResize from "quill-image-resize-module-react";
+import io from "socket.io-client";
 
 Quill.register("modules/imageResize", ImageResize);
 
@@ -89,16 +91,74 @@ const Home = () => {
 
   useEffect(() => {
     const getMailsFromServer = async () => {
-      const mailsRes = await axios.get("http://localhost:4123/mails");
+      const mailsRes = await axios.get("mails");
       setMails(mailsRes.data);
     };
     const getCompaniesFromServer = async () => {
-      const companiesRes = await axios.get("http://localhost:4123/company");
+      const companiesRes = await axios.get("company");
       setCompanies(companiesRes.data);
     };
     getCompaniesFromServer();
     getMailsFromServer();
   }, [refresh]);
+
+  useEffect(() => {
+    const socket = io("http://localhost:4123", {
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 1000,
+      timeout: 20000,
+      autoConnect: true,
+      transports: ["websocket"],
+    });
+
+    socket.on("connect", () => {
+      console.log("connected successfully");
+    });
+
+    socket.on("add_company", (data) => {
+      toast.message("New Company added", {
+        description: data,
+      });
+      setRefresh((prev) => !prev);
+    });
+
+    socket.on("update_company", (data) => {
+      toast.message("Company name changed", {
+        description: data,
+      });
+      setRefresh((prev) => !prev);
+    });
+
+    socket.on("add_email", (data) => {
+      toast.message("New Email added", {
+        description: data,
+      });
+      setRefresh((prev) => !prev);
+    });
+
+    socket.on("delete_company", (data) => {
+      console.log("delete_company", data);
+      toast.message("Company deleted", {
+        description: data,
+      });
+      setRefresh((prev) => !prev);
+    });
+
+    socket.on("delete_email", (data) => {
+      toast.message("Email deleted", {
+        description: data,
+      });
+      setRefresh((prev) => !prev);
+    });
+
+    socket.on("disconnect", () => {
+      console.log("disconnect successfully");
+      socket.disconnect();
+    });
+    return () => socket.disconnect();
+  }, []);
 
   const modules = {
     toolbar: {
@@ -113,7 +173,6 @@ const Home = () => {
         // Text formatting options
         ["bold", "italic", "underline", "strike"],
 
-        [{ header: [1, 2, 3, 4, 5, 6, false] }],
         // Blockquote
         ["blockquote"],
 
@@ -135,7 +194,6 @@ const Home = () => {
         // Checklist (tasks)
         // [{ list: "bullet" }, { list: "ordered" }, { list: "check" }],
 
-        ["better-table"],
         // Additional options (optional)
         ["clean"], // Removes formatting
         ["image"],
@@ -159,9 +217,6 @@ const Home = () => {
   const formats = [
     // Alignment
     "align",
-
-    //headers
-    "headers",
 
     // Font size and font family
     "size",
@@ -227,7 +282,7 @@ const Home = () => {
 
       formData.append("subject", subject);
 
-      const res = await axios.post("http://localhost:4123/send", formData, {
+      const res = await axios.post("send", formData, {
         headers: {
           "Content-Type": "multipart/form-data", // Ensure the content type is set
         },
@@ -252,7 +307,17 @@ const Home = () => {
         return;
       }
 
-      const res = await axios.post("http://localhost:4123/company", {
+      if (
+        mails.find(
+          (m) =>
+            m.company_name.toLowerCase() == company_name.toLocaleLowerCase()
+        )
+      ) {
+        toast.error("Company alreat exists");
+        return;
+      }
+
+      const res = await axios.post("company", {
         ["company_name"]: company_name,
       });
       toast.success("Successfully added new company");
@@ -279,8 +344,17 @@ const Home = () => {
         toast.error("No email provided");
         return;
       }
+      if (
+        mails
+          .find((m) => m.company_name == email_compny_label)
+          .email_ids.find((em) => em.company_email == company_email)
+      ) {
+        toast.error("Email already exists");
+        return;
+      }
+
       setEmailCompnyLabelError(files);
-      const res = await axios.post("http://localhost:4123/email", {
+      const res = await axios.post("email", {
         ["company_id"]: Number(email_compny),
         ["company_email"]: company_email,
       });
@@ -303,7 +377,7 @@ const Home = () => {
     e.preventDefault();
     try {
       console.log(email_to_delte.id);
-      const res = await axios.delete("http://localhost:4123/email", {
+      const res = await axios.delete("email", {
         data: { id: Number(email_to_delte.id) },
       });
       // console.log("res", res);
@@ -320,7 +394,7 @@ const Home = () => {
   const handleDeleteCompany = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.delete("http://localhost:4123/company", {
+      const res = await axios.delete("company", {
         data: { companyID: Number(company_to_delte.companyID) },
       });
       console.log("res", res);
@@ -341,7 +415,7 @@ const Home = () => {
         toast.error("change company name");
         return;
       }
-      const res = await axios.put("http://localhost:4123/company", {
+      const res = await axios.put("company", {
         companyID: Number(edit_company.companyID),
         company_name: edit_company.company_name,
       });
@@ -371,11 +445,6 @@ const Home = () => {
       row.company_email.toLowerCase().includes(filter_email.toLowerCase())
     );
   }, [em, filter_email]);
-
-  // console.log("em", em);
-  // console.log("recipients", recipients);
-  // console.log("filteredCompanies", filteredCompanies);
-  // console.log("mails", mails);
 
   return (
     <>
@@ -535,25 +604,11 @@ const Home = () => {
             }`}
           >
             <h1 className=" mt-[10vh] font-medium text-[1.5rem] md:text-[2rem]">
-              Search Email
+              Search Emails
             </h1>
             <p>Search for alls email</p>
-            <div className="flex items-center px-2 gap-1 border-2 w-full">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="lucide lucide-search"
-              >
-                <circle cx="11" cy="11" r="8" />
-                <path d="m21 21-4.3-4.3" />
-              </svg>
+            <div className="flex items-center mt-2 px-2 gap-1 w-full">
+              <Search className="px-1" size={40} />
               <input
                 type="text"
                 value={filter_email}
@@ -684,6 +739,7 @@ const Home = () => {
                 </label>
                 <input
                   id="searchable-select"
+                  name="searchable-select"
                   list="options-list"
                   value={email_compny_label}
                   onChange={(e) => {
@@ -694,32 +750,16 @@ const Home = () => {
                     setEmailCompny(email_id);
                   }}
                   className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter Company name"
+                  placeholder="Please Select"
+                  autoComplete="off"
                 />
-                <datalist
-                  className="absolute top-full left-0 z-10 w-full bg-white border border-gray-300 rounded-lg mt-1"
-                  id="options-list"
-                >
+                <datalist id="options-list" name="searchable-select">
                   {companies &&
-                    companies.map((c) =>
-                      email_compny === c.id ? (
-                        <option
-                          className="px-4 py-2 hover:bg-gray-100"
-                          key={c.id}
-                          value={c.company_name}
-                        >
-                          {c.company_name}
-                        </option>
-                      ) : (
-                        <option
-                          className="px-4 py-2 hover:bg-gray-100"
-                          key={c.id}
-                          value={c.company_name}
-                        >
-                          {c.company_name}
-                        </option>
-                      )
-                    )}
+                    companies.map((c) => (
+                      <option key={c.id} value={c.company_name}>
+                        {c.company_name}
+                      </option>
+                    ))}
                 </datalist>
                 {email_compny_label_error && (
                   <p className="text-red-400">
@@ -832,7 +872,7 @@ const Home = () => {
       )}
 
       <div className="flex flex-col md:flex-row p-5 md:justify-between w-[100%]">
-        <Toaster richColors position="top-center" />
+        <Toaster richColors position="bottom-right" />
 
         {/* Email Draft Section */}
         <div className="relative p-5 shadow-lg border-2 border-gray-200 rounded-lg h-fit max-h-auto w-[100%] md:w-[57%]">
