@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
-import axios from "axios";
+// import axios from "axios";
+import { axiosPrivate } from "../App";
 import { Toaster, toast } from "sonner";
 import {
   FileUploader,
@@ -91,11 +92,11 @@ const Home = () => {
 
   useEffect(() => {
     const getMailsFromServer = async () => {
-      const mailsRes = await axios.get("mails");
+      const mailsRes = await axiosPrivate.get("mails");
       setMails(mailsRes.data);
     };
     const getCompaniesFromServer = async () => {
-      const companiesRes = await axios.get("company");
+      const companiesRes = await axiosPrivate.get("company");
       setCompanies(companiesRes.data);
     };
     getCompaniesFromServer();
@@ -103,7 +104,7 @@ const Home = () => {
   }, [refresh]);
 
   useEffect(() => {
-    const socket = io("http://localhost:4123", {
+    const socket = io("http://192.168.29.229:4123", {
       reconnection: true,
       reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,
@@ -282,7 +283,7 @@ const Home = () => {
 
       formData.append("subject", subject);
 
-      const res = await axios.post("send", formData, {
+      const res = await axiosPrivate.post("send", formData, {
         headers: {
           "Content-Type": "multipart/form-data", // Ensure the content type is set
         },
@@ -317,7 +318,7 @@ const Home = () => {
         return;
       }
 
-      const res = await axios.post("company", {
+      const res = await axiosPrivate.post("company", {
         ["company_name"]: company_name,
       });
       toast.success("Successfully added new company");
@@ -354,7 +355,7 @@ const Home = () => {
       }
 
       setEmailCompnyLabelError(files);
-      const res = await axios.post("email", {
+      const res = await axiosPrivate.post("email", {
         ["company_id"]: Number(email_compny),
         ["company_email"]: company_email,
       });
@@ -377,7 +378,7 @@ const Home = () => {
     e.preventDefault();
     try {
       console.log(email_to_delte.id);
-      const res = await axios.delete("email", {
+      const res = await axiosPrivate.delete("email", {
         data: { id: Number(email_to_delte.id) },
       });
       // console.log("res", res);
@@ -394,7 +395,7 @@ const Home = () => {
   const handleDeleteCompany = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.delete("company", {
+      const res = await axiosPrivate.delete("company", {
         data: { companyID: Number(company_to_delte.companyID) },
       });
       console.log("res", res);
@@ -415,7 +416,7 @@ const Home = () => {
         toast.error("change company name");
         return;
       }
-      const res = await axios.put("company", {
+      const res = await axiosPrivate.put("company", {
         companyID: Number(edit_company.companyID),
         company_name: edit_company.company_name,
       });

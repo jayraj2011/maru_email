@@ -53,6 +53,7 @@ const startServer = () => {
   app.use(
     cors({
       origin: "http://localhost:5173",
+      credentials: true
     })
   );
   app.use(cookieParser());
@@ -303,7 +304,7 @@ const startServer = () => {
     });
   });
 
-  app.post("/sends", checkJWTToken, upload.array("attachment", 5), (req, res) => {
+  app.post("/sends", upload.array("attachment", 5), (req, res) => {
     try {
       const { recipients, mailContent, subject } = req.body;
 
@@ -421,7 +422,7 @@ const startServer = () => {
     const accessToken = jwt.sign({
       username: email_response[0].user_email,
     }, process.env.ACCESS_TOKEN_SECRET, {
-        expiresIn: '10m'
+        expiresIn: '10s'
     });
 
     const refreshToken = jwt.sign({
@@ -465,7 +466,7 @@ const startServer = () => {
               const accessToken = jwt.sign({
                   username: email_response[0].user_email,
               }, process.env.ACCESS_TOKEN_SECRET, {
-                  expiresIn: '10m'
+                  expiresIn: '10s'
               });
               return res.json({ accessToken });
             }
@@ -535,7 +536,7 @@ const startServer = () => {
   //   }
   // });
 
-  app.post("/send", checkJWTToken, upload.array("attachment", 5), async (req, res) => {
+  app.post("/send", upload.array("attachment", 5), async (req, res) => {
     try {
       const { recipients, mailContent, subject } = req.body;
 
@@ -604,7 +605,7 @@ const startServer = () => {
     res.json("server is running");
   });
 
-  app.get("/getMails", checkJWTToken, async (req, res) => {
+  app.get("/getMails", async (req, res) => {
     try {
       const emails = await db.query("SELECT * FROM client_info");
       res.status(200).json(emails[0]);
@@ -615,7 +616,7 @@ const startServer = () => {
     }
   });
 
-  app.get("/mails", checkJWTToken, async (req, res) => {
+  app.get("/mails", async (req, res) => {
     const query_result = [];
 
     try {
@@ -661,7 +662,7 @@ const startServer = () => {
     }
   });
 
-  app.get("/company", checkJWTToken, async (req, res) => {
+  app.get("/company", async (req, res) => {
     var query = "SELECT * FROM company";
     try {
       const companies = await db.query(query);
@@ -673,7 +674,7 @@ const startServer = () => {
     }
   });
 
-  app.post("/company", checkJWTToken, async (req, res) => {
+  app.post("/company", async (req, res) => {
     const { company_name } = req.body;
 
     if (company_name == "") {
@@ -697,7 +698,7 @@ const startServer = () => {
     }
   });
 
-  app.delete("/company", checkJWTToken, async (req, res) => {
+  app.delete("/company", async (req, res) => {
     const { companyID } = req.body;
 
     try {
@@ -733,7 +734,7 @@ const startServer = () => {
     }
   });
 
-  app.put("/company", checkJWTToken, async (req, res) => {
+  app.put("/company", async (req, res) => {
     const {
       companyID,
       company_name
@@ -752,7 +753,7 @@ const startServer = () => {
     }
   });
 
-  app.post("/email", checkJWTToken, async (req, res) => {
+  app.post("/email", async (req, res) => {
     const { company_id, company_email } = req.body;
 
     try {
@@ -775,7 +776,7 @@ const startServer = () => {
     }
   });
 
-  app.delete("/email", checkJWTToken, async (req, res) => {
+  app.delete("/email", async (req, res) => {
     const { id } = req.body;
 
     try {
