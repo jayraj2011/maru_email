@@ -6,7 +6,7 @@ import RequireAuth from "./pages/RequireAuth";
 import Layout from "./pages/Layout";
 
 export const axiosPrivate = axios.create({
-  baseURL: "http://localhost:4123/",
+  baseURL: "http://192.168.29.230:4123/",
   headers: {
     "Content-Type": "application/json",
   },
@@ -14,12 +14,12 @@ export const axiosPrivate = axios.create({
 })
 
 const App = () => {
-  axios.defaults.baseURL = "http://localhost:4123/";
+  axios.defaults.baseURL = "http://192.168.29.230:4123/";
   
   return (
     <Routes>
       <Route path="/" element={<Layout />} >
-        <Route path="login" element={<Login />} />
+        <Route index element={<Login />} />
 
         <Route element={<RequireAuth />}>
           <Route path="home" element={<Home />} />

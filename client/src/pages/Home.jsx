@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
-// import axios from "axios";
+// import axios from "axios"; 
 import { axiosPrivate } from "../App";
 import { Toaster, toast } from "sonner";
 import {
@@ -104,7 +104,7 @@ const Home = () => {
   }, [refresh]);
 
   useEffect(() => {
-    const socket = io("http://192.168.29.229:4123", {
+    const socket = io("http://192.168.29.230:4123", {
       reconnection: true,
       reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,
@@ -366,6 +366,8 @@ const Home = () => {
         }`
       );
       setCompanyEmail("");
+      setEmailCompny("");
+      setEmailCompnyLabel("");
       setAddEmail(false);
       setRefresh((prev) => !prev);
     } catch (error) {
@@ -396,7 +398,7 @@ const Home = () => {
     e.preventDefault();
     try {
       const res = await axiosPrivate.delete("company", {
-        data: { companyID: Number(company_to_delte.companyID) },
+        data: { companyID: Number(company_to_delte.companyID), company_name: company_to_delte.name },
       });
       console.log("res", res);
       toast.success("Successfully deleted company");

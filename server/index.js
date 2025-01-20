@@ -39,7 +39,7 @@ const startServer = () => {
   const server = http.createServer(app);
   const io = new Server(server, {
     cors: {
-      origin: "http://localhost:5173",
+      origin: "http://192.168.29.230:5173",
       transports: ["websocket", "polling"],
     },
     allowEIO3: true,
@@ -52,7 +52,7 @@ const startServer = () => {
   app.use(express.urlencoded({ extended: true }));
   app.use(
     cors({
-      origin: "http://localhost:5173",
+      origin: "http://192.168.29.230:5173",
       credentials: true
     })
   );
@@ -700,16 +700,17 @@ const startServer = () => {
   });
 
   app.delete("/company", async (req, res) => {
-    const { companyID } = req.body;
+    const { companyID, company_name } = req.body;
 
     try {
-      var email_delete_query = "DELETE FROM client_info WHERE company_id=?";
+      var email_delete_query = "DELETE FROM client_info WHERE company_id=? RETURNING * ";
       const email_result = await db.query(email_delete_query, [companyID]);
+
       if (email_result[0].affectedRows > 0) {
         var query = "DELETE FROM company WHERE id=?";
         const result = await db.query(query, [companyID]);
         if (result[0].affectedRows > 0) {
-          io.emit("delete_company", "");
+          io.emit("delete_company", company_name);
           res.status(200).json({ message: "Company Deleted Successfully" });
         } else {
           res
@@ -720,7 +721,7 @@ const startServer = () => {
         var query = "DELETE FROM company WHERE id=?";
         const result = await db.query(query, [companyID]);
         if (result[0].affectedRows > 0) {
-          io.emit("delete_company", "");
+          io.emit("delete_company", company_name);
           res.status(200).json({ message: "Company Deleted Successfully" });
         } else {
           res
