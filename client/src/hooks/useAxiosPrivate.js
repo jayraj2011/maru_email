@@ -10,6 +10,7 @@ const useAxiosPrivate = () => {
     useEffect(() => {
         const requestInterceptor = axiosPrivate.interceptors.request.use(
             config=> {
+                console.log("request intercepted");
                 if (!config.headers['Authorization']) {
                     config.headers['Authorization'] = auth?.accessToken;
                 }
@@ -21,7 +22,10 @@ const useAxiosPrivate = () => {
         )
 
         const responseInterceptor = axiosPrivate.interceptors.response.use(
-            response => response,
+            response => {
+                console.log("response intercepted");
+                return response;
+            },
             async (error) => {
                 const prevRequest = error?.config;
 

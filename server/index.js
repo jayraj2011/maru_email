@@ -16,6 +16,7 @@ import jwt from "jsonwebtoken";
 import cookieParser from "cookie-parser";
 import http from "http";
 import { Server } from "socket.io";
+import xlsx from "xlsx";
 
 function checkJWTToken(req, res, next) {
   const authCookie = req.cookies['authcookie'];
@@ -39,7 +40,7 @@ const startServer = () => {
   const server = http.createServer(app);
   const io = new Server(server, {
     cors: {
-      origin: "http://192.168.29.230:5173",
+      origin: "http://192.168.29.229:5173",
       transports: ["websocket", "polling"],
     },
     allowEIO3: true,
@@ -52,7 +53,7 @@ const startServer = () => {
   app.use(express.urlencoded({ extended: true }));
   app.use(
     cors({
-      origin: "http://192.168.29.230:5173",
+      origin: "http://192.168.29.229:5173",
       credentials: true
     })
   );
@@ -797,6 +798,131 @@ const startServer = () => {
         .json({ message: "Some Error Occurred, Please Try Again!" });
     }
   });
+
+  app.post("/upload", upload.single("excelFile"), async (req, res) => {
+    if (!req.file) {
+      return res.status(400).send("No file uploaded");
+    }
+    
+    try {
+      const workbook = xlsx.readFile(req.file.path);
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const data = xlsx.utils.sheet_to_json(worksheet);
+
+      var insertedCompanies = [];
+
+      // Insert data into MySQL
+      for (const row of data) {
+        const values = Object.values(row);
+        const placeholders = values.map(() => "?").join(", ");
+        console.log(values);
+        
+        if (insertedCompanies.includes(values[1])) {
+
+          const get_company_id_query = "SELECT id FROM company WHERE company_name LIKE ?";
+          const [company_id_result] = await db.query(get_company_id_query, [values[1]+"%"]);
+
+          if (insertedCompanies.includes(values[1])) {
+            const email_check_query = "SELECT * FROM client_info WHERE company_email=?";
+            const [email_check_result] = await db.query(email_check_query, [values[2]]);
+
+            if (email_check_result.length === 0) {
+              const insert_email_query = "INSERT INTO client_info (company_id, company_email) VALUES (?, ?)";
+              const [insert_email_result] = await db.query(insert_email_query, [company_id_result[0].id, values[2]]);
+            }
+          }
+        } else {
+          console.log("1");
+
+          let companyCompareName = values[1]+"%";
+          const company_check_query = "SELECT * FROM company WHERE company_name LIKE ?";
+          const [result] = await db.query(company_check_query, [companyCompareName]);
+          
+          console.log("2");
+          
+          if (result.length == 0) {
+
+            console.log("3");
+
+            const company_insert_query = "INSERT INTO company (company_name) VALUES(?)";
+            const [company_insert_result] = await db.query(company_insert_query, [values[1]]);
+            if (company_insert_result.affectedRows > 0) {
+              insertedCompanies.push(values[0]);
+            }
+
+            console.log("4");
+  
+            var company_id = company_insert_result.insertId;
+
+            const email_check_query = "SELECT * FROM client_info WHERE company_email=?";
+            const [email_check_result] = await db.query(email_check_query, [values[2]]);
+
+            console.log("5");
+
+            if (email_check_result.length === 0) {
+              console.log("6");
+              const insert_email_query = "INSERT INTO client_info (company_id, company_email) VALUES (?, ?)";
+              const [insert_email_result] = await db.query(insert_email_query, [company_id, values[2]]);
+            }
+
+          } else {
+            console.log("7");
+            const get_company_id_query = "SELECT id FROM company WHERE company_name LIKE ?";
+            const [company_id_result] = await db.query(get_company_id_query, [values[1]+"%"]);
+
+            console.log("8");
+            if (company_id_result.length > 0) {
+              console.log("9");
+              const email_check_query = "SELECT * FROM client_info WHERE company_email=?";
+              const [email_check_result] = await db.query(email_check_query, [values[2]]);
+
+              if (email_check_result.length === 0) {
+                console.log("10");
+                const insert_email_query = "INSERT INTO client_info (company_id, company_email) VALUES (?, ?)";
+                const [insert_email_result] = await db.query(insert_email_query, [company_id_result[0].id, values[2]]);
+              }
+            }
+          }
+        }
+
+        if (!(insertedCompanies.includes(values[1]))) insertedCompanies.push(values[1]);
+      }
+      console.log("end");
+      res.status(200).json({message: "File uploaded and data inserted successfully"});
+    } catch (error) {
+      console.error("Error processing file:", error);
+      res.status(500).send("Error processing file");
+    }
+  });
+
+  app.get("/down", async (req, res) => {
+    try {
+      const [rows] = await db.query("SELECT c.company_name, ci.company_email, @rownum:=@rownum+1 AS serial_number FROM (SELECT @rownum:=0) r, client_info ci JOIN company c WHERE c.id=ci.company_id");
+  
+      if (rows.length === 0) {
+        return res.status(404).send("No data found");
+      }
+
+      const workbook = xlsx.utils.book_new();
+      const worksheet = xlsx.utils.json_to_sheet(rows);
+      xlsx.utils.book_append_sheet(workbook, worksheet, "Sheet1");
+  
+      const filePath = path.join(__dirname, "company_emails.xlsx");
+      xlsx.writeFile(workbook, filePath);
+  
+      res.download(filePath, "data.xlsx", (err) => {
+        if (err) {
+          console.error("Error sending file:", err);
+          res.status(500).send("Error downloading file");
+        }
+        fs.unlinkSync(filePath); // Delete file after sending
+      });
+    } catch (error) {
+      console.error("Error generating Excel file:", error);
+      res.status(500).send("Error generating file");
+    }
+  })
 
   server.listen(4123, () => {
     console.log(`Worker ${process.pid} is running on http://localhost:4123`);

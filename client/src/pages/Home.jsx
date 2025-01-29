@@ -68,11 +68,11 @@ const Home = () => {
   const [email_compny, setEmailCompny] = useState("");
   const [email_compny_label, setEmailCompnyLabel] = useState("");
   const [email_compny_label_error, setEmailCompnyLabelError] = useState(false);
-  const [email_to_delte, setEmailToDelete] = useState(null);
-  const [company_to_delte, setCompanyToDelete] = useState(null);
+  const [email_to_delte, setEmailToDelete] = useState("");
+  const [company_to_delte, setCompanyToDelete] = useState("");
   const [company_name, setCompanyName] = useState("");
   const [addemail, setAddEmail] = useState(false);
-  const [company_email, setCompanyEmail] = useState(null);
+  const [company_email, setCompanyEmail] = useState("");
   const [deletecompany, setDeleteCompany] = useState(false);
   const [deleteemail, setDeleteEmail] = useState(false);
   const [allcompanyemails, setAllCompanyEmails] = useState([]);
@@ -86,7 +86,7 @@ const Home = () => {
   const [refresh, setRefresh] = useState(false);
   const [filter_email, setFilterEmail] = useState("");
   const [show_filter_email, setShowFilterEmail] = useState(false);
-  const [edit_company, setEditCompany] = useState(null);
+  const [edit_company, setEditCompany] = useState("");
   const [show_edit_company, setShowEditCompany] = useState(false);
   const [select_all, setSelectAll] = useState(false);
 
@@ -104,7 +104,7 @@ const Home = () => {
   }, [refresh]);
 
   useEffect(() => {
-    const socket = io("http://192.168.29.230:4123", {
+    const socket = io("http://192.168.29.229:4123", {
       reconnection: true,
       reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,
@@ -385,7 +385,7 @@ const Home = () => {
       });
       // console.log("res", res);
       toast.success("Successfully deleted email");
-      setEmailToDelete(null);
+      setEmailToDelete("");
       setDeleteEmail(false);
       setRefresh((prev) => !prev);
     } catch (error) {
@@ -402,7 +402,7 @@ const Home = () => {
       });
       console.log("res", res);
       toast.success("Successfully deleted company");
-      setCompanyToDelete(null);
+      setCompanyToDelete("");
       setDeleteCompany(false);
       setRefresh((prev) => !prev);
     } catch (error) {
@@ -424,7 +424,7 @@ const Home = () => {
       });
       console.log("res", res);
       toast.success("Successfully Edited company name");
-      setEditCompany(null);
+      setEditCompany("");
       setShowEditCompany(false);
       setRefresh((prev) => !prev);
     } catch (error) {
@@ -738,7 +738,7 @@ const Home = () => {
                   htmlFor="searchable-select"
                   className="block text-gray-700 font-medium mb-2"
                 >
-                  Select an Option
+                  Select Company
                 </label>
                 <input
                   id="searchable-select"
@@ -753,7 +753,7 @@ const Home = () => {
                     setEmailCompny(email_id);
                   }}
                   className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Please Select"
+                  placeholder="Please Select Company"
                   autoComplete="off"
                 />
                 <datalist id="options-list" name="searchable-select">
