@@ -19,13 +19,23 @@ import { Server } from "socket.io";
 import xlsx from "xlsx";
 
 function checkJWTToken(req, res, next) {
-  const authCookie = req.cookies['authcookie'];
+
+  // console.log(req);
+
+  // console.log("inside middleware");
+  const token = req.headers['authorization'];
+
+  // console.log("inside middleware 1");
+  // console.log(authCookie);
 
     // If there is no cookie, return an error
-  if(authCookie == null) return res.sendStatus(401);
+  if(token == null || token == undefined) return res.sendStatus(401);
 
-  jwt.verify(token, process.env.TOKEN_SECRET, (err, user) => {
-    console.log(err);
+  // console.log(token);
+  // console.log("cookie", authCookie);
+
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
+    // console.log(err);
 
     if (err) return res.sendStatus(403)
 
@@ -305,7 +315,7 @@ const startServer = () => {
     });
   });
 
-  app.post("/sends", upload.array("attachment", 5), (req, res) => {
+  app.post("/sends", checkJWTToken, upload.array("attachment", 5), (req, res) => {
     try {
       const { recipients, mailContent, subject } = req.body;
 
@@ -423,7 +433,7 @@ const startServer = () => {
     const accessToken = jwt.sign({
       username: email_response[0].user_email,
     }, process.env.ACCESS_TOKEN_SECRET, {
-        expiresIn: '10m'
+        expiresIn: '10s'
     });
 
     const refreshToken = jwt.sign({
@@ -440,7 +450,7 @@ const startServer = () => {
   });
 
   app.post('/refresh', async (req, res) => {
-    console.log(req.cookies);
+    console.log("in refresh", req);
     if (req.cookies?.jwt) {
 
       // Destructuring refreshToken from cookie
@@ -538,7 +548,7 @@ const startServer = () => {
   //   }
   // });
 
-  app.post("/send", upload.array("attachment", 5), async (req, res) => {
+  app.post("/send", checkJWTToken, upload.array("attachment", 5), async (req, res) => {
     try {
       const { recipients, mailContent, subject } = req.body;
 
@@ -607,7 +617,7 @@ const startServer = () => {
     res.json("server is running");
   });
 
-  app.get("/getMails", async (req, res) => {
+  app.get("/getMails", checkJWTToken, async (req, res) => {
     try {
       const emails = await db.query("SELECT * FROM client_info");
       res.status(200).json(emails[0]);
@@ -618,7 +628,7 @@ const startServer = () => {
     }
   });
 
-  app.get("/mails", async (req, res) => {
+  app.get("/mails", checkJWTToken, async (req, res) => {
     const query_result = [];
 
     try {
@@ -664,7 +674,7 @@ const startServer = () => {
     }
   });
 
-  app.get("/company", async (req, res) => {
+  app.get("/company", checkJWTToken, async (req, res) => {
     var query = "SELECT * FROM company";
     try {
       const companies = await db.query(query);
@@ -676,7 +686,7 @@ const startServer = () => {
     }
   });
 
-  app.post("/company", async (req, res) => {
+  app.post("/company", checkJWTToken, async (req, res) => {
     const { company_name } = req.body;
 
     if (company_name == "") {
@@ -700,7 +710,7 @@ const startServer = () => {
     }
   });
 
-  app.delete("/company", async (req, res) => {
+  app.delete("/company", checkJWTToken, async (req, res) => {
     const { companyID, company_name } = req.body;
 
     try {
@@ -737,7 +747,7 @@ const startServer = () => {
     }
   });
 
-  app.put("/company", async (req, res) => {
+  app.put("/company", checkJWTToken, async (req, res) => {
     const {
       companyID,
       company_name
@@ -756,7 +766,7 @@ const startServer = () => {
     }
   });
 
-  app.post("/email", async (req, res) => {
+  app.post("/email", checkJWTToken, async (req, res) => {
     const { company_id, company_email } = req.body;
 
     try {
@@ -779,7 +789,7 @@ const startServer = () => {
     }
   });
 
-  app.delete("/email", async (req, res) => {
+  app.delete("/email", checkJWTToken, async (req, res) => {
     const { id } = req.body;
 
     try {
@@ -799,7 +809,7 @@ const startServer = () => {
     }
   });
 
-  app.post("/upload", upload.single("excelFile"), async (req, res) => {
+  app.post("/upload", checkJWTToken, upload.single("excelFile"), async (req, res) => {
     if (!req.file) {
       return res.status(400).send("No file uploaded");
     }
@@ -896,7 +906,7 @@ const startServer = () => {
     }
   });
 
-  app.get("/down", async (req, res) => {
+  app.get("/down", checkJWTToken, async (req, res) => {
     try {
       const [rows] = await db.query("SELECT c.company_name, ci.company_email, @rownum:=@rownum+1 AS serial_number FROM (SELECT @rownum:=0) r, client_info ci JOIN company c WHERE c.id=ci.company_id");
   

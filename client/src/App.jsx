@@ -5,14 +5,6 @@ import Login from "./pages/Login";
 import RequireAuth from "./pages/RequireAuth";
 import Layout from "./pages/Layout";
 
-export const axiosPrivate = axios.create({
-  baseURL: "http://192.168.29.229:4123/",
-  headers: {
-    "Content-Type": "application/json",
-  },
-  withCredentials: true
-})
-
 const App = () => {
   axios.defaults.baseURL = "http://192.168.29.229:4123/";
   

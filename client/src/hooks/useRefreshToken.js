@@ -1,3 +1,5 @@
+// import { axios } from "../App";
+import axios from "../api/axios";
 import useAuth from "./useAuth"
 
 const useRefreshToken = () => {
@@ -9,8 +11,8 @@ const useRefreshToken = () => {
         });
 
         setAuth(prev => {
-            console.log(JSON.stringify(prev));
-            console.log(response.data.access_token);
+            console.log("prev in useRefreshToken", JSON.stringify(prev));
+            console.log("access token in useRefreshToken", response.data.access_token);
             return { ...prev, access_token: response.data.access_token }
         })
 

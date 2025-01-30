@@ -1,6 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
 // import axios from "axios"; 
-import { axiosPrivate } from "../App";
 import { Toaster, toast } from "sonner";
 import {
   FileUploader,
@@ -20,6 +19,7 @@ import ReactQuill, { Quill } from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import ImageResize from "quill-image-resize-module-react";
 import io from "socket.io-client";
+import useAxiosPrivate from "../hooks/useAxiosPrivate";
 
 Quill.register("modules/imageResize", ImageResize);
 
@@ -89,6 +89,8 @@ const Home = () => {
   const [edit_company, setEditCompany] = useState("");
   const [show_edit_company, setShowEditCompany] = useState(false);
   const [select_all, setSelectAll] = useState(false);
+
+  const axiosPrivate = useAxiosPrivate();
 
   useEffect(() => {
     const getMailsFromServer = async () => {

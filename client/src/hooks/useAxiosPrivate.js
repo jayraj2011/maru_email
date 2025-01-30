@@ -1,7 +1,8 @@
 import { useEffect } from "react";
-import { axiosPrivate } from "../App";
+// import { axiosPrivate } from "../App";
 import useAuth from "./useAuth";
 import useRefreshToken from "./useRefreshToken"
+import { axiosPrivate } from "../api/axios";
 
 const useAxiosPrivate = () => {
     const refresh = useRefreshToken();
@@ -10,7 +11,6 @@ const useAxiosPrivate = () => {
     useEffect(() => {
         const requestInterceptor = axiosPrivate.interceptors.request.use(
             config=> {
-                console.log("request intercepted");
                 if (!config.headers['Authorization']) {
                     config.headers['Authorization'] = auth?.accessToken;
                 }
@@ -23,7 +23,6 @@ const useAxiosPrivate = () => {
 
         const responseInterceptor = axiosPrivate.interceptors.response.use(
             response => {
-                console.log("response intercepted");
                 return response;
             },
             async (error) => {
@@ -48,3 +47,5 @@ const useAxiosPrivate = () => {
 
     return axiosPrivate;
 }
+
+export default useAxiosPrivate;
