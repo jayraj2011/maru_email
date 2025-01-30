@@ -49,7 +49,7 @@ const startServer = () => {
   const server = http.createServer(app);
   const io = new Server(server, {
     cors: {
-      origin: "http://192.168.0.103:5173",
+      origin: "http://192.168.29.229:5173",
       transports: ["websocket", "polling"],
     },
     allowEIO3: true,
@@ -62,7 +62,7 @@ const startServer = () => {
   app.use(express.urlencoded({ extended: true }));
   app.use(
     cors({
-      origin: "http://192.168.0.103:5173",
+      origin: "http://192.168.29.229:5173",
       credentials: true,
     })
   );
@@ -456,7 +456,7 @@ const startServer = () => {
 
     res.cookie("jwt", refreshToken, {
       httpOnly: true,
-      sameSite: "None",
+      sameSite: "Lax",
       secure: false,
       path: "/",
       maxAge: 24 * 60 * 60 * 1000,
@@ -468,10 +468,11 @@ const startServer = () => {
   });
 
   app.post("/refresh", async (req, res) => {
-    console.log("in refresh", req);
-    if (req.cookies?.jwt) {
+    if (req?.cookies?.jwt) {
       // Destructuring refreshToken from cookie
-      const refreshToken = req.cookies.jwt;
+      const refreshToken = req?.cookies.jwt;
+
+      // console.log(refreshToken)
 
       // Verifying refresh token
       jwt.verify(

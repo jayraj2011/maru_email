@@ -108,7 +108,7 @@ const Home = () => {
   }, [refresh]);
 
   useEffect(() => {
-    const socket = io("http://192.168.0.103:4123", {
+    const socket = io("http://192.168.29.229:4123", {
       reconnection: true,
       reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,
