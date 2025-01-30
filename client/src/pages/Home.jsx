@@ -451,7 +451,7 @@ const Home = () => {
       const formData = new FormData();
       formData.append("file", bulk_import_file, bulk_import_file.name);
 
-      const res = await axiosPrivate.post("upload", bulk_import_file, {
+      const res = await axiosPrivate.post("upload", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -481,6 +481,8 @@ const Home = () => {
       row.company_email.toLowerCase().includes(filter_email.toLowerCase())
     );
   }, [em, filter_email]);
+
+  console.log("file", bulk_import_file);
 
   return (
     <>
@@ -517,7 +519,6 @@ const Home = () => {
           Bulk Email Uploads
         </button>
       </nav>
-
       {addcompany && (
         <div
           onClick={(e) => {
@@ -568,7 +569,6 @@ const Home = () => {
           </div>
         </div>
       )}
-
       {open_uploadexcel_portal && (
         <div
           onClick={(e) => {
@@ -617,7 +617,6 @@ const Home = () => {
           </div>
         </div>
       )}
-
       {show_edit_company && (
         <div
           onClick={(e) => {
@@ -678,7 +677,6 @@ const Home = () => {
           </div>
         </div>
       )}
-
       {show_filter_email && (
         <div
           onClick={(e) => {
@@ -776,7 +774,6 @@ const Home = () => {
           </div>
         </div>
       )}
-
       {addemail && (
         <div
           onClick={(e) => {
@@ -891,7 +888,6 @@ const Home = () => {
           </div>
         </div>
       )}
-
       {deleteemail && (
         <div
           onClick={(e) => {
@@ -926,7 +922,6 @@ const Home = () => {
           </div>
         </div>
       )}
-
       {deletecompany && (
         <div
           onClick={(e) => {
