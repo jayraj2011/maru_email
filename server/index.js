@@ -883,7 +883,7 @@ const startServer = () => {
               }
             }
           } else {
-            console.log("1");
+            // console.log("1");
 
             let companyCompareName = values[1] + "%";
             const company_check_query =
@@ -892,10 +892,10 @@ const startServer = () => {
               companyCompareName,
             ]);
 
-            console.log("2");
+            // console.log("2");
 
             if (result.length == 0) {
-              console.log("3");
+              // console.log("3");
 
               const company_insert_query =
                 "INSERT INTO company (company_name) VALUES(?)";
@@ -907,7 +907,7 @@ const startServer = () => {
                 insertedCompanies.push(values[0]);
               }
 
-              console.log("4");
+              // console.log("4");
 
               var company_id = company_insert_result.insertId;
 
@@ -917,10 +917,10 @@ const startServer = () => {
                 values[2],
               ]);
 
-              console.log("5");
+              // console.log("5");
 
               if (email_check_result.length === 0) {
-                console.log("6");
+                // console.log("6");
                 const insert_email_query =
                   "INSERT INTO client_info (company_id, company_email) VALUES (?, ?)";
                 const [insert_email_result] = await db.query(
@@ -929,16 +929,16 @@ const startServer = () => {
                 );
               }
             } else {
-              console.log("7");
+              // console.log("7");
               const get_company_id_query =
                 "SELECT id FROM company WHERE company_name LIKE ?";
               const [company_id_result] = await db.query(get_company_id_query, [
                 values[1] + "%",
               ]);
 
-              console.log("8");
+              // console.log("8");
               if (company_id_result.length > 0) {
-                console.log("9");
+                // console.log("9");
                 const email_check_query =
                   "SELECT * FROM client_info WHERE company_email=?";
                 const [email_check_result] = await db.query(email_check_query, [
@@ -946,7 +946,7 @@ const startServer = () => {
                 ]);
 
                 if (email_check_result.length === 0) {
-                  console.log("10");
+                  // console.log("10");
                   const insert_email_query =
                     "INSERT INTO client_info (company_id, company_email) VALUES (?, ?)";
                   const [insert_email_result] = await db.query(
@@ -961,7 +961,7 @@ const startServer = () => {
           if (!insertedCompanies.includes(values[1]))
             insertedCompanies.push(values[1]);
         }
-        console.log("end");
+        // console.log("end");
         res
           .status(200)
           .json({ message: "File uploaded and data inserted successfully" });

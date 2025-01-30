@@ -449,7 +449,7 @@ const Home = () => {
       }
 
       const formData = new FormData();
-      formData.append("file", bulk_import_file, bulk_import_file.name);
+      formData.append("excelFile", bulk_import_file, bulk_import_file.name);
 
       const res = await axiosPrivate.post("upload", formData, {
         headers: {
