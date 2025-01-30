@@ -49,7 +49,7 @@ const startServer = () => {
   const server = http.createServer(app);
   const io = new Server(server, {
     cors: {
-      origin: "http://192.168.29.229:5173",
+      origin: "http://192.168.0.103:5173",
       transports: ["websocket", "polling"],
     },
     allowEIO3: true,
@@ -62,7 +62,7 @@ const startServer = () => {
   app.use(express.urlencoded({ extended: true }));
   app.use(
     cors({
-      origin: "http://192.168.29.229:5173",
+      origin: "http://192.168.0.103:5173",
       credentials: true,
     })
   );

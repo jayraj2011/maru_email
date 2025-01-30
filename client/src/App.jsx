@@ -6,11 +6,9 @@ import RequireAuth from "./pages/RequireAuth";
 import Layout from "./pages/Layout";
 
 const App = () => {
-  axios.defaults.baseURL = "http://192.168.29.229:4123/";
-  
   return (
     <Routes>
-      <Route path="/" element={<Layout />} >
+      <Route path="/" element={<Layout />}>
         <Route index element={<Login />} />
 
         <Route element={<RequireAuth />}>

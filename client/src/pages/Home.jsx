@@ -10,6 +10,7 @@ import {
 import {
   ArrowDownNarrowWide,
   ArrowUpNarrowWide,
+  Download,
   Filter,
   Pen,
   Search,
@@ -91,6 +92,7 @@ const Home = () => {
   const [select_all, setSelectAll] = useState(false);
   const [open_uploadexcel_portal, setOpenUploadExcelPortal] = useState(false);
   const [bulk_import_file, setBulkImportFile] = useState(null);
+  const [bulk_export_file, setBulkExportFile] = useState(null);
 
   const axiosPrivate = useAxiosPrivate();
 
@@ -108,7 +110,7 @@ const Home = () => {
   }, [refresh]);
 
   useEffect(() => {
-    const socket = io("http://192.168.29.229:4123", {
+    const socket = io("http://192.168.0.103:4123", {
       reconnection: true,
       reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,
@@ -466,6 +468,45 @@ const Home = () => {
     }
   };
 
+  const handleBulkExport = async (e) => {
+    try {
+      e.preventDefault();
+
+      const response = await axiosPrivate.get("down", {
+        responseType: "blob",
+      });
+      const blob = new Blob([response.data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+
+      const blobUrl = window.URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = blobUrl;
+
+      const contentDisposition = response.headers["content-disposition"];
+      let filename = "data";
+
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="(.+)"/);
+        if (match && match.length > 1) {
+          filename = match[1];
+        }
+      }
+
+      link.setAttribute("download", filename);
+      document.body.appendChild(link);
+      link.click();
+
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+      toast.success("Successfully downloaded emails and companies");
+    } catch (error) {
+      toast.error("Something went wrong. please try again laster");
+      console.log(error);
+    }
+  };
+
   const filteredCompanies = useMemo(() => {
     if (!mails) return [];
     return mails.filter((row) =>
@@ -481,8 +522,6 @@ const Home = () => {
       row.company_email.toLowerCase().includes(filter_email.toLowerCase())
     );
   }, [em, filter_email]);
-
-  console.log("file", bulk_import_file);
 
   return (
     <>
@@ -517,6 +556,12 @@ const Home = () => {
           className="px-4 py-2 border-b-2 border-black"
         >
           Bulk Email Uploads
+        </button>
+        <button
+          onClick={handleBulkExport}
+          className="px-4 flex gap-1 py-2 border-b-2 border-black"
+        >
+          <Download /> Download Emails
         </button>
       </nav>
       {addcompany && (
