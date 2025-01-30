@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
-// import axios from "axios"; 
+// import axios from "axios";
 import { Toaster, toast } from "sonner";
 import {
   FileUploader,
@@ -89,6 +89,8 @@ const Home = () => {
   const [edit_company, setEditCompany] = useState("");
   const [show_edit_company, setShowEditCompany] = useState(false);
   const [select_all, setSelectAll] = useState(false);
+  const [open_uploadexcel_portal, setOpenUploadExcelPortal] = useState(false);
+  const [bulk_import_file, setBulkImportFile] = useState(null);
 
   const axiosPrivate = useAxiosPrivate();
 
@@ -106,7 +108,7 @@ const Home = () => {
   }, [refresh]);
 
   useEffect(() => {
-    const socket = io("http://192.168.29.229:4123", {
+    const socket = io("http://192.168.0.103:4123", {
       reconnection: true,
       reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,
@@ -400,7 +402,10 @@ const Home = () => {
     e.preventDefault();
     try {
       const res = await axiosPrivate.delete("company", {
-        data: { companyID: Number(company_to_delte.companyID), company_name: company_to_delte.name },
+        data: {
+          companyID: Number(company_to_delte.companyID),
+          company_name: company_to_delte.name,
+        },
       });
       console.log("res", res);
       toast.success("Successfully deleted company");
@@ -428,6 +433,32 @@ const Home = () => {
       toast.success("Successfully Edited company name");
       setEditCompany("");
       setShowEditCompany(false);
+      setRefresh((prev) => !prev);
+    } catch (error) {
+      toast.error("Something went wrong. please try again laster");
+      console.log(error);
+    }
+  };
+
+  const handleBulkImport = async (e) => {
+    try {
+      e.preventDefault();
+      if (!bulk_import_file) {
+        toast.error("No File provided");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("file", bulk_import_file, bulk_import_file.name);
+
+      const res = await axiosPrivate.post("upload", bulk_import_file, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      toast.success("Successfully imported emails and companies");
+      setBulkImportFile("");
+      setOpenUploadExcelPortal(false);
       setRefresh((prev) => !prev);
     } catch (error) {
       toast.error("Something went wrong. please try again laster");
@@ -479,6 +510,12 @@ const Home = () => {
         >
           Add Email
         </button>
+        <button
+          onClick={() => setOpenUploadExcelPortal((prev) => !prev)}
+          className="px-4 py-2 border-b-2 border-black"
+        >
+          Bulk Email Uploads
+        </button>
       </nav>
 
       {addcompany && (
@@ -525,6 +562,55 @@ const Home = () => {
                   className="px-3 py-2 rounded-lg bg-green-800 text-white"
                 >
                   Add Company
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {open_uploadexcel_portal && (
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            setOpenUploadExcelPortal(false);
+          }}
+          className="absolute inset-0 z-10 bg-[rgba(255,255,255,0.7)] flex items-center justify-center"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="z-20 w-[80%] md:w-[100%] max-w-lg border-2 bg-white opacity-100 h-fit rounded-lg shadow-md p-5"
+          >
+            <h1 className=" font-medium text-[1rem] md:text-[2rem]">
+              Bulk Import
+            </h1>
+            <p>Choose a excel file to import the emails and companies from</p>
+            <form className="flex flex-col mt-[1rem] md:mt-[2rem] gap-5">
+              <div className="flex flex-col gap-1 w-[100%]">
+                <label htmlFor="company_name" className="font-medium">
+                  Choose File
+                </label>
+                <input
+                  id="company_name"
+                  type="file"
+                  onChange={(e) => setBulkImportFile(e.target.files[0])}
+                  className="rounded-lg px-4 py-2 border-2"
+                  required
+                />
+              </div>
+              <div className="flex gap-4 justify-end">
+                <button
+                  onClick={() => setOpenUploadExcelPortal(false)}
+                  className="px-3 py-2 rounded-lg bg-red-800 text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={(e) => handleBulkImport(e)}
+                  className="px-3 py-2 rounded-lg bg-green-800 text-white"
+                >
+                  Bulk Import
                 </button>
               </div>
             </form>

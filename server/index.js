@@ -11,7 +11,7 @@ import { SendMailClient } from "zeptomail";
 import cluster from "cluster";
 import os from "node:os";
 import { db } from "./db.js";
-import {} from 'dotenv/config';
+import {} from "dotenv/config";
 import jwt from "jsonwebtoken";
 import cookieParser from "cookie-parser";
 import http from "http";
@@ -19,17 +19,16 @@ import { Server } from "socket.io";
 import xlsx from "xlsx";
 
 function checkJWTToken(req, res, next) {
-
   // console.log(req);
 
   // console.log("inside middleware");
-  const token = req.headers['authorization'];
+  const token = req.headers["authorization"];
 
   // console.log("inside middleware 1");
   // console.log(authCookie);
 
-    // If there is no cookie, return an error
-  if(token == null || token == undefined) return res.sendStatus(401);
+  // If there is no cookie, return an error
+  if (token == null || token == undefined) return res.sendStatus(401);
 
   // console.log(token);
   // console.log("cookie", authCookie);
@@ -37,12 +36,12 @@ function checkJWTToken(req, res, next) {
   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
     // console.log(err);
 
-    if (err) return res.sendStatus(403)
+    if (err) return res.sendStatus(403);
 
-    req.user = user
+    req.user = user;
 
-    next()
-  })
+    next();
+  });
 }
 
 const startServer = () => {
@@ -50,7 +49,7 @@ const startServer = () => {
   const server = http.createServer(app);
   const io = new Server(server, {
     cors: {
-      origin: "http://192.168.29.229:5173",
+      origin: "http://192.168.0.103:5173",
       transports: ["websocket", "polling"],
     },
     allowEIO3: true,
@@ -63,8 +62,8 @@ const startServer = () => {
   app.use(express.urlencoded({ extended: true }));
   app.use(
     cors({
-      origin: "http://192.168.29.229:5173",
-      credentials: true
+      origin: "http://192.168.0.103:5173",
+      credentials: true,
     })
   );
   app.use(cookieParser());
@@ -315,182 +314,202 @@ const startServer = () => {
     });
   });
 
-  app.post("/sends", checkJWTToken, upload.array("attachment", 5), (req, res) => {
-    try {
-      const { recipients, mailContent, subject } = req.body;
+  app.post(
+    "/sends",
+    checkJWTToken,
+    upload.array("attachment", 5),
+    (req, res) => {
+      try {
+        const { recipients, mailContent, subject } = req.body;
 
-      const url = "api.zeptomail.com/";
-      const token =
-        "Zoho-enczapikey wSsVR60l8hT5C/h1njX5JO9szVUEBgn+Ek4r0Af06Xf8T63Apsc5whfIAwbyGqRJGWRpQTREp+h8m0sC02dahth/mwtRCiiF9mqRe1U4J3x17qnvhDzJW2hUmxKILosKxQpqmWBnE80g+g==";
+        const url = "api.zeptomail.com/";
+        const token =
+          "Zoho-enczapikey wSsVR60l8hT5C/h1njX5JO9szVUEBgn+Ek4r0Af06Xf8T63Apsc5whfIAwbyGqRJGWRpQTREp+h8m0sC02dahth/mwtRCiiF9mqRe1U4J3x17qnvhDzJW2hUmxKILosKxQpqmWBnE80g+g==";
 
-      if (!Array.isArray(recipients) || recipients.length === 0) {
-        return res
-          .status(400)
-          .json({ message: "Recipients list must be a non-empty array." });
-      }
+        if (!Array.isArray(recipients) || recipients.length === 0) {
+          return res
+            .status(400)
+            .json({ message: "Recipients list must be a non-empty array." });
+        }
 
-      let Content = juice(mailContent, juiceOptions);
+        let Content = juice(mailContent, juiceOptions);
 
-      if (!req.files || req.files.length === 0) {
-        let client = new SendMailClient({ url, token });
+        if (!req.files || req.files.length === 0) {
+          let client = new SendMailClient({ url, token });
 
-        for (let recipient of recipients) {
-          const recipient_object = JSON.parse(recipient);
-          client
-            .sendMail({
-              from: {
-                address: "noreply@labourlaws.co.in",
-                name: "noreply",
-              },
-              to: [
-                {
-                  email_address: {
-                    address: recipient_object.address,
-                    name: recipient_object.name,
-                  },
+          for (let recipient of recipients) {
+            const recipient_object = JSON.parse(recipient);
+            client
+              .sendMail({
+                from: {
+                  address: "noreply@labourlaws.co.in",
+                  name: "noreply",
                 },
-              ],
-              subject: subject,
-              htmlbody: Content,
-              // attachments: req.files,
-            })
-            .then((resp) => console.log("success"))
-            .catch((error) => {
-              console.log("error", error);
-              res.status(500).json(error);
-            });
-        }
-
-        res.status(200).json({ message: "Emails Sent Successfully!!" });
-      } else {
-        var attachment_files = [];
-
-        for (let file of req.files) {
-          var individual_file = {};
-
-          const filePath = path.join(__dirname, "uploads", file.originalname);
-          const fileContent = fs.readFileSync(filePath);
-
-          // Convert the file content to base64
-          const encoded = fileContent.toString("base64");
-          individual_file["content"] = encoded;
-          individual_file["mime_type"] = file.mimetype;
-          individual_file["name"] = file.filename;
-
-          attachment_files.push(individual_file);
-        }
-
-        let client = new SendMailClient({ url, token });
-
-        for (let recipient of recipients) {
-          const recipient_object = JSON.parse(recipient);
-          client
-            .sendMail({
-              from: {
-                address: "noreply@labourlaws.co.in",
-                name: "noreply",
-              },
-              to: [
-                {
-                  email_address: {
-                    address: recipient_object.address,
-                    name: recipient_object.name,
+                to: [
+                  {
+                    email_address: {
+                      address: recipient_object.address,
+                      name: recipient_object.name,
+                    },
                   },
+                ],
+                subject: subject,
+                htmlbody: Content,
+                // attachments: req.files,
+              })
+              .then((resp) => console.log("success"))
+              .catch((error) => {
+                console.log("error", error);
+                res.status(500).json(error);
+              });
+          }
+
+          res.status(200).json({ message: "Emails Sent Successfully!!" });
+        } else {
+          var attachment_files = [];
+
+          for (let file of req.files) {
+            var individual_file = {};
+
+            const filePath = path.join(__dirname, "uploads", file.originalname);
+            const fileContent = fs.readFileSync(filePath);
+
+            // Convert the file content to base64
+            const encoded = fileContent.toString("base64");
+            individual_file["content"] = encoded;
+            individual_file["mime_type"] = file.mimetype;
+            individual_file["name"] = file.filename;
+
+            attachment_files.push(individual_file);
+          }
+
+          let client = new SendMailClient({ url, token });
+
+          for (let recipient of recipients) {
+            const recipient_object = JSON.parse(recipient);
+            client
+              .sendMail({
+                from: {
+                  address: "noreply@labourlaws.co.in",
+                  name: "noreply",
                 },
-              ],
-              subject: subject,
-              htmlbody: Content,
-              attachments: attachment_files,
-            })
-            .then((resp) => console.log("success"))
-            .catch((error) => {
-              console.log("here", error.error.details);
-              res.status(500).json(error);
-            });
+                to: [
+                  {
+                    email_address: {
+                      address: recipient_object.address,
+                      name: recipient_object.name,
+                    },
+                  },
+                ],
+                subject: subject,
+                htmlbody: Content,
+                attachments: attachment_files,
+              })
+              .then((resp) => console.log("success"))
+              .catch((error) => {
+                console.log("here", error.error.details);
+                res.status(500).json(error);
+              });
+          }
+          res.status(200).json({ message: "Emails Sent Successfully!!" });
         }
-        res.status(200).json({ message: "Emails Sent Successfully!!" });
+      } catch (error) {
+        console.log("catch error", error);
+        return res.status(500).json(error.message);
       }
-    } catch (error) {
-      console.log("catch error", error);
-      return res.status(500).json(error.message);
     }
-  });
+  );
 
   app.post("/login", async (req, res) => {
-    const {user_email, user_password} = req.body;
+    const { user_email, user_password } = req.body;
 
     var email_query = "SELECT * FROM user_details WHERE user_email=?";
     const [email_response] = await db.query(email_query, [user_email]);
 
     if (email_response.length === 0) {
-      res.status(500).json({message: "User Email or Password is invalid"});
+      res.status(500).json({ message: "User Email or Password is invalid" });
     }
 
     if (email_response[0].password !== user_password) {
-      res.status(500).json({message: "User Email or Password is invalid in pass"})
+      res
+        .status(500)
+        .json({ message: "User Email or Password is invalid in pass" });
     }
 
-    const accessToken = jwt.sign({
-      username: email_response[0].user_email,
-    }, process.env.ACCESS_TOKEN_SECRET, {
-        expiresIn: '10s'
-    });
+    const accessToken = jwt.sign(
+      {
+        username: email_response[0].user_email,
+      },
+      process.env.ACCESS_TOKEN_SECRET,
+      {
+        expiresIn: "10s",
+      }
+    );
 
-    const refreshToken = jwt.sign({
-      username: email_response[0].user_email,
-    }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '1d' });
+    const refreshToken = jwt.sign(
+      {
+        username: email_response[0].user_email,
+      },
+      process.env.REFRESH_TOKEN_SECRET,
+      { expiresIn: "1d" }
+    );
 
-    res.cookie('jwt', refreshToken, {
+    res.cookie("jwt", refreshToken, {
       httpOnly: true,
-      sameSite: 'None',
+      sameSite: "None",
       secure: false,
       path: "/",
-      maxAge: 24 * 60 * 60 * 1000
+      maxAge: 24 * 60 * 60 * 1000,
     });
 
     console.log(res);
-    
+
     return res.json({ accessToken });
   });
 
-  app.post('/refresh', async (req, res) => {
+  app.post("/refresh", async (req, res) => {
     console.log("in refresh", req);
     if (req.cookies?.jwt) {
-
       // Destructuring refreshToken from cookie
       const refreshToken = req.cookies.jwt;
 
       // Verifying refresh token
-      jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET,
-          async (err, decoded) => {
-            if (err) {
+      jwt.verify(
+        refreshToken,
+        process.env.REFRESH_TOKEN_SECRET,
+        async (err, decoded) => {
+          if (err) {
+            // Wrong Refesh Token
+            return res.status(406).json({ message: "Unauthorized" });
+          } else {
+            // Correct token we send a new access token
 
-              // Wrong Refesh Token
-              return res.status(406).json({ message: 'Unauthorized' });
+            var email_query = "SELECT * FROM user_details WHERE user_email=?";
+            const [email_response] = await db.query(email_query, [
+              decoded.username,
+            ]);
+
+            if (email_response.length === 0) {
+              return res.status(406).json({ message: "Unauthorized" });
             }
-            else {
 
-              // Correct token we send a new access token
-              
-              var email_query = "SELECT * FROM user_details WHERE user_email=?";
-              const [email_response] = await db.query(email_query, [decoded.username]);
-
-              if (email_response.length === 0) {
-                return res.status(406).json({ message: 'Unauthorized' });
+            const accessToken = jwt.sign(
+              {
+                username: email_response[0].user_email,
+              },
+              process.env.ACCESS_TOKEN_SECRET,
+              {
+                expiresIn: "10m",
               }
-
-              const accessToken = jwt.sign({
-                  username: email_response[0].user_email,
-              }, process.env.ACCESS_TOKEN_SECRET, {
-                  expiresIn: '10m'
-              });
-              return res.json({ accessToken });
-            }
-          })
+            );
+            return res.json({ accessToken });
+          }
+        }
+      );
     } else {
-      return res.status(406).json({ message: 'Unauthorized in else' });
+      return res.status(406).json({ message: "Unauthorized in else" });
     }
-  })
+  });
 
   // app.post("/send", upload.array("attachment", 5), async (req, res) => {
   //   try {
@@ -552,70 +571,75 @@ const startServer = () => {
   //   }
   // });
 
-  app.post("/send", checkJWTToken, upload.array("attachment", 5), async (req, res) => {
-    try {
-      const { recipients, mailContent, subject } = req.body;
+  app.post(
+    "/send",
+    checkJWTToken,
+    upload.array("attachment", 5),
+    async (req, res) => {
+      try {
+        const { recipients, mailContent, subject } = req.body;
 
-      if (!Array.isArray(recipients) || recipients.length === 0) {
-        return res
-          .status(400)
-          .json({ message: "Recipients list must be a non-empty array." });
-      }
+        if (!Array.isArray(recipients) || recipients.length === 0) {
+          return res
+            .status(400)
+            .json({ message: "Recipients list must be a non-empty array." });
+        }
 
-      const Content = juice(mailContent, juiceOptions);
-      const BATCH_SIZE = 50; // Number of emails to send per batch
-      const url = "api.zeptomail.com/";
-      const token =
-        "Zoho-enczapikey wSsVR60l8hT5C/h1njX5JO9szVUEBgn+Ek4r0Af06Xf8T63Apsc5whfIAwbyGqRJGWRpQTREp+h8m0sC02dahth/mwtRCiiF9mqRe1U4J3x17qnvhDzJW2hUmxKILosKxQpqmWBnE80g+g==";
+        const Content = juice(mailContent, juiceOptions);
+        const BATCH_SIZE = 50; // Number of emails to send per batch
+        const url = "api.zeptomail.com/";
+        const token =
+          "Zoho-enczapikey wSsVR60l8hT5C/h1njX5JO9szVUEBgn+Ek4r0Af06Xf8T63Apsc5whfIAwbyGqRJGWRpQTREp+h8m0sC02dahth/mwtRCiiF9mqRe1U4J3x17qnvhDzJW2hUmxKILosKxQpqmWBnE80g+g==";
 
-      let attachment_files = [];
-      if (req.files && req.files.length > 0) {
-        attachment_files = req.files.map((file) => {
-          const filePath = path.join(__dirname, "uploads", file.originalname);
-          const fileContent = fs.readFileSync(filePath);
-          return {
-            content: fileContent.toString("base64"),
-            mime_type: file.mimetype,
-            name: file.originalname,
-          };
-        });
-      }
+        let attachment_files = [];
+        if (req.files && req.files.length > 0) {
+          attachment_files = req.files.map((file) => {
+            const filePath = path.join(__dirname, "uploads", file.originalname);
+            const fileContent = fs.readFileSync(filePath);
+            return {
+              content: fileContent.toString("base64"),
+              mime_type: file.mimetype,
+              name: file.originalname,
+            };
+          });
+        }
 
-      const client = new SendMailClient({ url, token });
+        const client = new SendMailClient({ url, token });
 
-      const sendEmail = async (recipient) => {
-        const recipient_object = JSON.parse(recipient);
-        await client.sendMail({
-          from: {
-            address: "noreply@labourlaws.co.in",
-            name: "noreply",
-          },
-          to: [
-            {
-              email_address: {
-                address: recipient_object.address,
-                name: recipient_object.name,
-              },
+        const sendEmail = async (recipient) => {
+          const recipient_object = JSON.parse(recipient);
+          await client.sendMail({
+            from: {
+              address: "noreply@labourlaws.co.in",
+              name: "noreply",
             },
-          ],
-          subject,
-          htmlbody: Content,
-          attachments: attachment_files,
-        });
-      };
+            to: [
+              {
+                email_address: {
+                  address: recipient_object.address,
+                  name: recipient_object.name,
+                },
+              },
+            ],
+            subject,
+            htmlbody: Content,
+            attachments: attachment_files,
+          });
+        };
 
-      for (let i = 0; i < recipients.length; i += BATCH_SIZE) {
-        const batch = recipients.slice(i, i + BATCH_SIZE);
-        console.log(`Processing batch ${i / BATCH_SIZE + 1}`);
-        await Promise.all(batch.map(sendEmail));
+        for (let i = 0; i < recipients.length; i += BATCH_SIZE) {
+          const batch = recipients.slice(i, i + BATCH_SIZE);
+          console.log(`Processing batch ${i / BATCH_SIZE + 1}`);
+          await Promise.all(batch.map(sendEmail));
+        }
+
+        res.status(200).json({ message: "Emails Sent Successfully!!" });
+      } catch (error) {
+        console.error("Error:", error);
+        res.status(500).json({ message: error.message });
       }
-
-      res.status(200).json({ message: "Emails Sent Successfully!!" });
-    } catch (error) {
-      console.error("Error:", error);
-      res.status(500).json({ message: error.message });
     }
-  });
+  );
 
   app.get("/", (req, res) => {
     res.json("server is running");
@@ -718,7 +742,8 @@ const startServer = () => {
     const { companyID, company_name } = req.body;
 
     try {
-      var email_delete_query = "DELETE FROM client_info WHERE company_id=? RETURNING * ";
+      var email_delete_query =
+        "DELETE FROM client_info WHERE company_id=? RETURNING * ";
       const email_result = await db.query(email_delete_query, [companyID]);
 
       if (email_result[0].affectedRows > 0) {
@@ -752,10 +777,7 @@ const startServer = () => {
   });
 
   app.put("/company", checkJWTToken, async (req, res) => {
-    const {
-      companyID,
-      company_name
-    } = req.body;
+    const { companyID, company_name } = req.body;
 
     var query = "UPDATE company SET company_name=? WHERE id=?";
 
@@ -813,107 +835,148 @@ const startServer = () => {
     }
   });
 
-  app.post("/upload", checkJWTToken, upload.single("excelFile"), async (req, res) => {
-    if (!req.file) {
-      return res.status(400).send("No file uploaded");
-    }
-    
-    try {
-      const workbook = xlsx.readFile(req.file.path);
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[sheetName];
-      const data = xlsx.utils.sheet_to_json(worksheet);
+  app.post(
+    "/upload",
+    checkJWTToken,
+    upload.single("excelFile"),
+    async (req, res) => {
+      if (!req.file) {
+        return res.status(400).send("No file uploaded");
+      }
 
-      var insertedCompanies = [];
+      try {
+        const workbook = xlsx.readFile(req.file.path);
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const data = xlsx.utils.sheet_to_json(worksheet);
 
-      // Insert data into MySQL
-      for (const row of data) {
-        const values = Object.values(row);
-        const placeholders = values.map(() => "?").join(", ");
-        console.log(values);
-        
-        if (insertedCompanies.includes(values[1])) {
+        var insertedCompanies = [];
 
-          const get_company_id_query = "SELECT id FROM company WHERE company_name LIKE ?";
-          const [company_id_result] = await db.query(get_company_id_query, [values[1]+"%"]);
+        // Insert data into MySQL
+        for (const row of data) {
+          const values = Object.values(row);
+          const placeholders = values.map(() => "?").join(", ");
+          console.log(values);
 
           if (insertedCompanies.includes(values[1])) {
-            const email_check_query = "SELECT * FROM client_info WHERE company_email=?";
-            const [email_check_result] = await db.query(email_check_query, [values[2]]);
+            const get_company_id_query =
+              "SELECT id FROM company WHERE company_name LIKE ?";
+            const [company_id_result] = await db.query(get_company_id_query, [
+              values[1] + "%",
+            ]);
 
-            if (email_check_result.length === 0) {
-              const insert_email_query = "INSERT INTO client_info (company_id, company_email) VALUES (?, ?)";
-              const [insert_email_result] = await db.query(insert_email_query, [company_id_result[0].id, values[2]]);
-            }
-          }
-        } else {
-          console.log("1");
-
-          let companyCompareName = values[1]+"%";
-          const company_check_query = "SELECT * FROM company WHERE company_name LIKE ?";
-          const [result] = await db.query(company_check_query, [companyCompareName]);
-          
-          console.log("2");
-          
-          if (result.length == 0) {
-
-            console.log("3");
-
-            const company_insert_query = "INSERT INTO company (company_name) VALUES(?)";
-            const [company_insert_result] = await db.query(company_insert_query, [values[1]]);
-            if (company_insert_result.affectedRows > 0) {
-              insertedCompanies.push(values[0]);
-            }
-
-            console.log("4");
-  
-            var company_id = company_insert_result.insertId;
-
-            const email_check_query = "SELECT * FROM client_info WHERE company_email=?";
-            const [email_check_result] = await db.query(email_check_query, [values[2]]);
-
-            console.log("5");
-
-            if (email_check_result.length === 0) {
-              console.log("6");
-              const insert_email_query = "INSERT INTO client_info (company_id, company_email) VALUES (?, ?)";
-              const [insert_email_result] = await db.query(insert_email_query, [company_id, values[2]]);
-            }
-
-          } else {
-            console.log("7");
-            const get_company_id_query = "SELECT id FROM company WHERE company_name LIKE ?";
-            const [company_id_result] = await db.query(get_company_id_query, [values[1]+"%"]);
-
-            console.log("8");
-            if (company_id_result.length > 0) {
-              console.log("9");
-              const email_check_query = "SELECT * FROM client_info WHERE company_email=?";
-              const [email_check_result] = await db.query(email_check_query, [values[2]]);
+            if (insertedCompanies.includes(values[1])) {
+              const email_check_query =
+                "SELECT * FROM client_info WHERE company_email=?";
+              const [email_check_result] = await db.query(email_check_query, [
+                values[2],
+              ]);
 
               if (email_check_result.length === 0) {
-                console.log("10");
-                const insert_email_query = "INSERT INTO client_info (company_id, company_email) VALUES (?, ?)";
-                const [insert_email_result] = await db.query(insert_email_query, [company_id_result[0].id, values[2]]);
+                const insert_email_query =
+                  "INSERT INTO client_info (company_id, company_email) VALUES (?, ?)";
+                const [insert_email_result] = await db.query(
+                  insert_email_query,
+                  [company_id_result[0].id, values[2]]
+                );
+              }
+            }
+          } else {
+            console.log("1");
+
+            let companyCompareName = values[1] + "%";
+            const company_check_query =
+              "SELECT * FROM company WHERE company_name LIKE ?";
+            const [result] = await db.query(company_check_query, [
+              companyCompareName,
+            ]);
+
+            console.log("2");
+
+            if (result.length == 0) {
+              console.log("3");
+
+              const company_insert_query =
+                "INSERT INTO company (company_name) VALUES(?)";
+              const [company_insert_result] = await db.query(
+                company_insert_query,
+                [values[1]]
+              );
+              if (company_insert_result.affectedRows > 0) {
+                insertedCompanies.push(values[0]);
+              }
+
+              console.log("4");
+
+              var company_id = company_insert_result.insertId;
+
+              const email_check_query =
+                "SELECT * FROM client_info WHERE company_email=?";
+              const [email_check_result] = await db.query(email_check_query, [
+                values[2],
+              ]);
+
+              console.log("5");
+
+              if (email_check_result.length === 0) {
+                console.log("6");
+                const insert_email_query =
+                  "INSERT INTO client_info (company_id, company_email) VALUES (?, ?)";
+                const [insert_email_result] = await db.query(
+                  insert_email_query,
+                  [company_id, values[2]]
+                );
+              }
+            } else {
+              console.log("7");
+              const get_company_id_query =
+                "SELECT id FROM company WHERE company_name LIKE ?";
+              const [company_id_result] = await db.query(get_company_id_query, [
+                values[1] + "%",
+              ]);
+
+              console.log("8");
+              if (company_id_result.length > 0) {
+                console.log("9");
+                const email_check_query =
+                  "SELECT * FROM client_info WHERE company_email=?";
+                const [email_check_result] = await db.query(email_check_query, [
+                  values[2],
+                ]);
+
+                if (email_check_result.length === 0) {
+                  console.log("10");
+                  const insert_email_query =
+                    "INSERT INTO client_info (company_id, company_email) VALUES (?, ?)";
+                  const [insert_email_result] = await db.query(
+                    insert_email_query,
+                    [company_id_result[0].id, values[2]]
+                  );
+                }
               }
             }
           }
-        }
 
-        if (!(insertedCompanies.includes(values[1]))) insertedCompanies.push(values[1]);
+          if (!insertedCompanies.includes(values[1]))
+            insertedCompanies.push(values[1]);
+        }
+        console.log("end");
+        res
+          .status(200)
+          .json({ message: "File uploaded and data inserted successfully" });
+      } catch (error) {
+        console.error("Error processing file:", error);
+        res.status(500).send("Error processing file");
       }
-      console.log("end");
-      res.status(200).json({message: "File uploaded and data inserted successfully"});
-    } catch (error) {
-      console.error("Error processing file:", error);
-      res.status(500).send("Error processing file");
     }
-  });
+  );
 
   app.get("/down", checkJWTToken, async (req, res) => {
     try {
-      const [rows] = await db.query("SELECT c.company_name, ci.company_email, @rownum:=@rownum+1 AS serial_number FROM (SELECT @rownum:=0) r, client_info ci JOIN company c WHERE c.id=ci.company_id");
-  
+      const [rows] = await db.query(
+        "SELECT c.company_name, ci.company_email, @rownum:=@rownum+1 AS serial_number FROM (SELECT @rownum:=0) r, client_info ci JOIN company c WHERE c.id=ci.company_id"
+      );
+
       if (rows.length === 0) {
         return res.status(404).send("No data found");
       }
@@ -921,10 +984,10 @@ const startServer = () => {
       const workbook = xlsx.utils.book_new();
       const worksheet = xlsx.utils.json_to_sheet(rows);
       xlsx.utils.book_append_sheet(workbook, worksheet, "Sheet1");
-  
+
       const filePath = path.join(__dirname, "company_emails.xlsx");
       xlsx.writeFile(workbook, filePath);
-  
+
       res.download(filePath, "data.xlsx", (err) => {
         if (err) {
           console.error("Error sending file:", err);
@@ -936,7 +999,7 @@ const startServer = () => {
       console.error("Error generating Excel file:", error);
       res.status(500).send("Error generating file");
     }
-  })
+  });
 
   server.listen(4123, () => {
     console.log(`Worker ${process.pid} is running on http://localhost:4123`);
