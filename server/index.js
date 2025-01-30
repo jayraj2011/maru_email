@@ -19,22 +19,22 @@ import { Server } from "socket.io";
 import xlsx from "xlsx";
 
 function checkJWTToken(req, res, next) {
-  // console.log(req);
+  // // console.log(req);
 
-  // console.log("inside middleware");
+  // // console.log("inside middleware");
   const token = req.headers["authorization"];
 
-  // console.log("inside middleware 1");
-  // console.log(authCookie);
+  // // console.log("inside middleware 1");
+  // // console.log(authCookie);
 
   // If there is no cookie, return an error
   if (token == null || token == undefined) return res.sendStatus(401);
 
-  // console.log(token);
-  // console.log("cookie", authCookie);
+  // // console.log(token);
+  // // console.log("cookie", authCookie);
 
   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
-    // console.log(err);
+    // // console.log(err);
 
     if (err) return res.sendStatus(403);
 
@@ -49,7 +49,7 @@ const startServer = () => {
   const server = http.createServer(app);
   const io = new Server(server, {
     cors: {
-      origin: "http://192.168.0.103:5173",
+      origin: "http://192.168.29.229:5173",
       transports: ["websocket", "polling"],
     },
     allowEIO3: true,
@@ -62,7 +62,7 @@ const startServer = () => {
   app.use(express.urlencoded({ extended: true }));
   app.use(
     cors({
-      origin: "http://192.168.0.103:5173",
+      origin: "http://192.168.29.229:5173",
       credentials: true,
     })
   );
@@ -307,10 +307,10 @@ const startServer = () => {
   const juiceOptions = { extraCss: quillStyles };
 
   io.on("connection", (socket) => {
-    console.log("A user connected");
+    // console.log("A user connected");
 
     socket.on("disconnect", () => {
-      console.log("A user disconnected");
+      // console.log("A user disconnected");
     });
   });
 
@@ -359,7 +359,7 @@ const startServer = () => {
               })
               .then((resp) => console.log("success"))
               .catch((error) => {
-                console.log("error", error);
+                // console.log("error", error);
                 res.status(500).json(error);
               });
           }
@@ -407,14 +407,14 @@ const startServer = () => {
               })
               .then((resp) => console.log("success"))
               .catch((error) => {
-                console.log("here", error.error.details);
+                // console.log("here", error.error.details);
                 res.status(500).json(error);
               });
           }
           res.status(200).json({ message: "Emails Sent Successfully!!" });
         }
       } catch (error) {
-        console.log("catch error", error);
+        // console.log("catch error", error);
         return res.status(500).json(error.message);
       }
     }
@@ -442,7 +442,7 @@ const startServer = () => {
       },
       process.env.ACCESS_TOKEN_SECRET,
       {
-        expiresIn: "10s",
+        expiresIn: "10m",
       }
     );
 
@@ -462,7 +462,7 @@ const startServer = () => {
       maxAge: 24 * 60 * 60 * 1000,
     });
 
-    console.log(res);
+    // console.log(res);
 
     return res.json({ accessToken });
   });
@@ -472,7 +472,7 @@ const startServer = () => {
       // Destructuring refreshToken from cookie
       const refreshToken = req?.cookies.jwt;
 
-      // console.log(refreshToken)
+      // // console.log(refreshToken)
 
       // Verifying refresh token
       jwt.verify(
@@ -511,6 +511,18 @@ const startServer = () => {
       return res.status(406).json({ message: "Unauthorized in else" });
     }
   });
+
+  app.post("/logout", (req, res) => {
+    res.cookie("jwt", "", {
+        httpOnly: true,
+        sameSite: "Lax",
+        secure: false, // Change to true in production (HTTPS)
+        path: "/",
+        expires: new Date(0) // Expire the cookie immediately
+    });
+
+    return res.json({ message: "Logged out successfully" });
+});
 
   // app.post("/send", upload.array("attachment", 5), async (req, res) => {
   //   try {
@@ -630,7 +642,7 @@ const startServer = () => {
 
         for (let i = 0; i < recipients.length; i += BATCH_SIZE) {
           const batch = recipients.slice(i, i + BATCH_SIZE);
-          console.log(`Processing batch ${i / BATCH_SIZE + 1}`);
+          // console.log(`Processing batch ${i / BATCH_SIZE + 1}`);
           await Promise.all(batch.map(sendEmail));
         }
 
@@ -724,7 +736,7 @@ const startServer = () => {
         .json({ message: "Data is emptty, please provide valid data!" });
     }
 
-    // console.log("company_name", company_name);
+    // // console.log("company_name", company_name);
     var query = "INSERT INTO company (company_name) VALUES(?)";
 
     try {
@@ -732,7 +744,7 @@ const startServer = () => {
       io.emit("add_company", company_name);
       res.status(200).json({ message: "Company Inserted Successfully" });
     } catch (err) {
-      console.log(err);
+      // console.log(err);
       res
         .status(500)
         .json({ message: "Some Error Occurred, Please Try Again!" });
@@ -857,7 +869,7 @@ const startServer = () => {
         for (const row of data) {
           const values = Object.values(row);
           const placeholders = values.map(() => "?").join(", ");
-          console.log(values);
+          // console.log(values);
 
           if (insertedCompanies.includes(values[1])) {
             const get_company_id_query =
@@ -883,7 +895,7 @@ const startServer = () => {
               }
             }
           } else {
-            // console.log("1");
+            // // console.log("1");
 
             let companyCompareName = values[1] + "%";
             const company_check_query =
@@ -892,10 +904,10 @@ const startServer = () => {
               companyCompareName,
             ]);
 
-            // console.log("2");
+            // // console.log("2");
 
             if (result.length == 0) {
-              // console.log("3");
+              // // console.log("3");
 
               const company_insert_query =
                 "INSERT INTO company (company_name) VALUES(?)";
@@ -907,7 +919,7 @@ const startServer = () => {
                 insertedCompanies.push(values[0]);
               }
 
-              // console.log("4");
+              // // console.log("4");
 
               var company_id = company_insert_result.insertId;
 
@@ -917,10 +929,10 @@ const startServer = () => {
                 values[2],
               ]);
 
-              // console.log("5");
+              // // console.log("5");
 
               if (email_check_result.length === 0) {
-                // console.log("6");
+                // // console.log("6");
                 const insert_email_query =
                   "INSERT INTO client_info (company_id, company_email) VALUES (?, ?)";
                 const [insert_email_result] = await db.query(
@@ -929,16 +941,16 @@ const startServer = () => {
                 );
               }
             } else {
-              // console.log("7");
+              // // console.log("7");
               const get_company_id_query =
                 "SELECT id FROM company WHERE company_name LIKE ?";
               const [company_id_result] = await db.query(get_company_id_query, [
                 values[1] + "%",
               ]);
 
-              // console.log("8");
+              // // console.log("8");
               if (company_id_result.length > 0) {
-                // console.log("9");
+                // // console.log("9");
                 const email_check_query =
                   "SELECT * FROM client_info WHERE company_email=?";
                 const [email_check_result] = await db.query(email_check_query, [
@@ -946,7 +958,7 @@ const startServer = () => {
                 ]);
 
                 if (email_check_result.length === 0) {
-                  // console.log("10");
+                  // // console.log("10");
                   const insert_email_query =
                     "INSERT INTO client_info (company_id, company_email) VALUES (?, ?)";
                   const [insert_email_result] = await db.query(
@@ -961,7 +973,7 @@ const startServer = () => {
           if (!insertedCompanies.includes(values[1]))
             insertedCompanies.push(values[1]);
         }
-        // console.log("end");
+        // // console.log("end");
         res
           .status(200)
           .json({ message: "File uploaded and data inserted successfully" });
@@ -975,7 +987,7 @@ const startServer = () => {
   app.get("/down", checkJWTToken, async (req, res) => {
     try {
       const [rows] = await db.query(
-        "SELECT c.company_name, ci.company_email, @rownum:=@rownum+1 AS serial_number FROM (SELECT @rownum:=0) r, client_info ci JOIN company c WHERE c.id=ci.company_id"
+        "SELECT @rownum:=@rownum+1 as 'Serial Number', c.company_name, ci.company_email AS serial_number FROM (SELECT @rownum:=0) r, client_info ci JOIN company c WHERE c.id=ci.company_id ORDER BY c.company_name ASC"
       );
 
       if (rows.length === 0) {
@@ -1003,21 +1015,21 @@ const startServer = () => {
   });
 
   server.listen(4123, () => {
-    console.log(`Worker ${process.pid} is running on http://localhost:4123`);
+    // console.log(`Worker ${process.pid} is running on http://localhost:4123`);
   });
 };
 
 if (cluster.isPrimary) {
   const numCPUs = os.cpus().length;
-  console.log(`Master process ${process.pid} is running`);
-  console.log(`Forking for ${numCPUs} CPUs`);
+  // console.log(`Master process ${process.pid} is running`);
+  // console.log(`Forking for ${numCPUs} CPUs`);
 
   for (let i = 0; i < numCPUs; i++) {
     cluster.fork();
   }
 
   cluster.on("exit", (worker, code, signal) => {
-    console.log(`Worker ${worker.process.pid} died. Restarting...`);
+    // console.log(`Worker ${worker.process.pid} died. Restarting...`);
     cluster.fork();
   });
 } else {

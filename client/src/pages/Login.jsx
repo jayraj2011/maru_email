@@ -41,14 +41,14 @@ const Login = () => {
                 }
             );
 
-            console.log(response);
+            // console.log(response);
             const accessToken = response?.data?.accessToken;
             setAuth({ user, pwd, accessToken });
             setUser('');
             setPwd('');
             navigate("/home", {replace: true});
         } catch (err) {
-            console.log(err);
+            // console.log(err);
             if (!err?.response) {
                 setErrMsg('No Server Response');
             } else if (err.response?.status === 400) {

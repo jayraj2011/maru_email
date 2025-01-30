@@ -5,7 +5,7 @@ const RequireAuth = () => {
     const { auth } = useAuth();
     const location = useLocation();
 
-    console.log(auth.user);
+    // console.log(auth.user);
 
     return (
         auth?.user

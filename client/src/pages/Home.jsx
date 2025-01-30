@@ -21,6 +21,7 @@ import "react-quill/dist/quill.snow.css";
 import ImageResize from "quill-image-resize-module-react";
 import io from "socket.io-client";
 import useAxiosPrivate from "../hooks/useAxiosPrivate";
+import useAuth from "../hooks/useAuth";
 
 Quill.register("modules/imageResize", ImageResize);
 
@@ -94,6 +95,8 @@ const Home = () => {
   const [bulk_import_file, setBulkImportFile] = useState(null);
   const [bulk_export_file, setBulkExportFile] = useState(null);
 
+  const {auth, setAuth} = useAuth();
+
   const axiosPrivate = useAxiosPrivate();
 
   useEffect(() => {
@@ -110,7 +113,7 @@ const Home = () => {
   }, [refresh]);
 
   useEffect(() => {
-    const socket = io("http://192.168.0.103:4123", {
+    const socket = io("http://192.168.29.229:4123", {
       reconnection: true,
       reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,
@@ -121,7 +124,7 @@ const Home = () => {
     });
 
     socket.on("connect", () => {
-      console.log("connected successfully");
+      // console.log("connected successfully");
     });
 
     socket.on("add_company", (data) => {
@@ -146,7 +149,7 @@ const Home = () => {
     });
 
     socket.on("delete_company", (data) => {
-      console.log("delete_company", data);
+      // console.log("delete_company", data);
       toast.message("Company deleted", {
         description: data,
       });
@@ -161,7 +164,7 @@ const Home = () => {
     });
 
     socket.on("disconnect", () => {
-      console.log("disconnect successfully");
+      // console.log("disconnect successfully");
       socket.disconnect();
     });
     return () => socket.disconnect();
@@ -301,7 +304,7 @@ const Home = () => {
       if (error.code == 400) {
         toast.error("No Email Chosen");
       }
-      console.log("error", error);
+      // console.log("error", error);
       toast.error("Something went wrong. Please try again");
     }
   };
@@ -333,7 +336,7 @@ const Home = () => {
       setRefresh((prev) => !prev);
     } catch (error) {
       toast.error("Something went wrong. please try again laster");
-      console.log(error);
+      // console.log(error);
     }
   };
 
@@ -378,25 +381,25 @@ const Home = () => {
       setRefresh((prev) => !prev);
     } catch (error) {
       toast.error("Something went wrong. please try again laster");
-      console.log(error);
+      // console.log(error);
     }
   };
 
   const handleDeleteEmail = async (e) => {
     e.preventDefault();
     try {
-      console.log(email_to_delte.id);
+      // // console.log(email_to_delte.id);
       const res = await axiosPrivate.delete("email", {
         data: { id: Number(email_to_delte.id) },
       });
-      // console.log("res", res);
+      // // console.log("res", res);
       toast.success("Successfully deleted email");
       setEmailToDelete("");
       setDeleteEmail(false);
       setRefresh((prev) => !prev);
     } catch (error) {
       toast.error("Something went wrong. please try again laster");
-      console.log(error);
+      // // console.log(error);
     }
   };
 
@@ -409,14 +412,14 @@ const Home = () => {
           company_name: company_to_delte.name,
         },
       });
-      console.log("res", res);
+      // // console.log("res", res);
       toast.success("Successfully deleted company");
       setCompanyToDelete("");
       setDeleteCompany(false);
       setRefresh((prev) => !prev);
     } catch (error) {
       toast.error("Something went wrong. please try again laster");
-      console.log(error);
+      // // console.log(error);
     }
   };
 
@@ -431,14 +434,14 @@ const Home = () => {
         companyID: Number(edit_company.companyID),
         company_name: edit_company.company_name,
       });
-      console.log("res", res);
+      // // console.log("res", res);
       toast.success("Successfully Edited company name");
       setEditCompany("");
       setShowEditCompany(false);
       setRefresh((prev) => !prev);
     } catch (error) {
       toast.error("Something went wrong. please try again laster");
-      console.log(error);
+      // // console.log(error);
     }
   };
 
@@ -464,7 +467,7 @@ const Home = () => {
       setRefresh((prev) => !prev);
     } catch (error) {
       toast.error("Something went wrong. please try again laster");
-      console.log(error);
+      // // console.log(error);
     }
   };
 
@@ -503,9 +506,19 @@ const Home = () => {
       toast.success("Successfully downloaded emails and companies");
     } catch (error) {
       toast.error("Something went wrong. please try again laster");
-      console.log(error);
+      // // console.log(error);
     }
   };
+
+  const handleLogout = async (e) => {
+    try{
+      setAuth({});
+      response = await axiosPrivate.post("/logout");
+    } catch(e) {
+      toast.error("Something went wrong. please try again laster");
+      console.log(e);
+    }
+  }
 
   const filteredCompanies = useMemo(() => {
     if (!mails) return [];
@@ -562,6 +575,12 @@ const Home = () => {
           className="px-4 flex gap-1 py-2 border-b-2 border-black"
         >
           <Download /> Download Emails
+        </button>
+        <button
+          onClick={handleLogout}
+          className="px-4 flex gap-1 py-2 border-b-2 border-black"
+        >
+          Logout
         </button>
       </nav>
       {addcompany && (
