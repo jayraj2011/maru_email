@@ -442,9 +442,13 @@ const startServer = () => {
 
     res.cookie('jwt', refreshToken, {
       httpOnly: true,
-      sameSite: 'None', secure: true,
+      sameSite: 'None',
+      secure: false,
+      path: "/",
       maxAge: 24 * 60 * 60 * 1000
     });
+
+    console.log(res);
     
     return res.json({ accessToken });
   });
