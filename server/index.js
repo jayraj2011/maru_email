@@ -660,7 +660,7 @@ const startServer = () => {
 
   app.get("/getMails", checkJWTToken, async (req, res) => {
     try {
-      const emails = await db.query("SELECT * FROM client_info");
+      const emails = await db.query("SELECT * FROM client_info ORDER_BY company_email ASC");
       res.status(200).json(emails[0]);
     } catch (e) {
       res.status(500).json({
@@ -681,7 +681,7 @@ const startServer = () => {
               GROUP_CONCAT(ci.id) AS company_emails_ids
         FROM company c
         LEFT JOIN client_info ci ON c.id = ci.company_id
-        GROUP BY c.id, c.company_name;
+        GROUP BY c.id, c.company_name ORDER BY c.company_name ASC;
       `);
 
       // Map the result to include an array of emails
@@ -736,12 +736,23 @@ const startServer = () => {
         .json({ message: "Data is emptty, please provide valid data!" });
     }
 
+    var checkQuery = "SELECT * FROM company WHERE company_name=?";
+    const [checkCompanyResult] = await db.query(checkQuery, [company_name]);
+
+    console.log(checkCompanyResult);
+
+    if (checkCompanyResult.length > 0) {
+      res
+        .status(500)
+        .json({ message: "Company Already exists!" });
+    }
+
     // // console.log("company_name", company_name);
     var query = "INSERT INTO company (company_name) VALUES(?)";
 
     try {
-      const result = await db.query(query, [company_name]);
-      io.emit("add_company", company_name);
+      const result = await db.query(query, [company_name.toUpperCase()]);
+      io.emit("add_company", company_name.toUpperCase());
       res.status(200).json({ message: "Company Inserted Successfully" });
     } catch (err) {
       // console.log(err);
@@ -795,7 +806,7 @@ const startServer = () => {
     var query = "UPDATE company SET company_name=? WHERE id=?";
 
     try {
-      const result = await db.query(query, [company_name, companyID]);
+      const result = await db.query(query, [company_name.toUpperCase(), companyID]);
       io.emit("update_company", company_name);
       res.status(200).json({ message: "Company Name Updated Successfully!" });
     } catch (err) {
@@ -811,7 +822,7 @@ const startServer = () => {
     try {
       const result = await db.query(
         "INSERT INTO client_info (company_id, company_email) VALUES (?, ?)",
-        [company_id, company_email]
+        [company_id, company_email.toLowerCase()]
       );
       if (result[0].affectedRows > 0) {
         res.status(200).json({ message: "Email Created Successfully" });
@@ -873,16 +884,16 @@ const startServer = () => {
 
           if (insertedCompanies.includes(values[1])) {
             const get_company_id_query =
-              "SELECT id FROM company WHERE company_name LIKE ?";
+              "SELECT id FROM company WHERE company_name=?";
             const [company_id_result] = await db.query(get_company_id_query, [
-              values[1] + "%",
+              values[1].toUpperCase(),
             ]);
 
             if (insertedCompanies.includes(values[1])) {
               const email_check_query =
                 "SELECT * FROM client_info WHERE company_email=?";
               const [email_check_result] = await db.query(email_check_query, [
-                values[2],
+                values[2].toLowerCase(),
               ]);
 
               if (email_check_result.length === 0) {
@@ -890,18 +901,18 @@ const startServer = () => {
                   "INSERT INTO client_info (company_id, company_email) VALUES (?, ?)";
                 const [insert_email_result] = await db.query(
                   insert_email_query,
-                  [company_id_result[0].id, values[2]]
+                  [company_id_result[0].id, values[2].toLowerCase()]
                 );
               }
             }
           } else {
             // // console.log("1");
 
-            let companyCompareName = values[1] + "%";
+            // let companyCompareName =  + "%";
             const company_check_query =
-              "SELECT * FROM company WHERE company_name LIKE ?";
+              "SELECT * FROM company WHERE company_name=?";
             const [result] = await db.query(company_check_query, [
-              companyCompareName,
+              values[1],
             ]);
 
             // // console.log("2");
@@ -913,7 +924,7 @@ const startServer = () => {
                 "INSERT INTO company (company_name) VALUES(?)";
               const [company_insert_result] = await db.query(
                 company_insert_query,
-                [values[1]]
+                [values[1].toUpperCase()]
               );
               if (company_insert_result.affectedRows > 0) {
                 insertedCompanies.push(values[0]);
@@ -943,9 +954,9 @@ const startServer = () => {
             } else {
               // // console.log("7");
               const get_company_id_query =
-                "SELECT id FROM company WHERE company_name LIKE ?";
+                "SELECT id FROM company WHERE company_name=?";
               const [company_id_result] = await db.query(get_company_id_query, [
-                values[1] + "%",
+                values[1].toUpperCase(),
               ]);
 
               // // console.log("8");
@@ -963,7 +974,7 @@ const startServer = () => {
                     "INSERT INTO client_info (company_id, company_email) VALUES (?, ?)";
                   const [insert_email_result] = await db.query(
                     insert_email_query,
-                    [company_id_result[0].id, values[2]]
+                    [company_id_result[0].id, values[2].toLowerCase()]
                   );
                 }
               }

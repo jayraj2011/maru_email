@@ -320,10 +320,10 @@ const Home = () => {
       if (
         mails.find(
           (m) =>
-            m.company_name.toLowerCase() == company_name.toLocaleLowerCase()
+            m.company_name.toLowerCase().trim() == company_name.toLocaleLowerCase().trim()
         )
       ) {
-        toast.error("Company alreat exists");
+        toast.error("Company already exists");
         return;
       }
 
@@ -1247,7 +1247,7 @@ const Home = () => {
                               );
                             }}
                           >
-                            <label htmlFor="cname">{row.company_name}</label>
+                            <label htmlFor="cname">{row.company_name.toUpperCase()}</label>
                           </button>
                         </td>
                         <td>
