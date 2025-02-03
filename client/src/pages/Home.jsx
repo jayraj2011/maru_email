@@ -95,9 +95,21 @@ const Home = () => {
   const [bulk_import_file, setBulkImportFile] = useState(null);
   const [bulk_export_file, setBulkExportFile] = useState(null);
 
-  const {auth, setAuth} = useAuth();
+  const { auth, setAuth } = useAuth();
 
   const axiosPrivate = useAxiosPrivate();
+
+  const contentRef = useRef(null);
+  const scrollbarRef = useRef(null);
+
+  // Sync both scrollbars
+  const handleScroll = (e, type) => {
+    if (type === "top") {
+      contentRef.current.scrollLeft = e.target.scrollLeft;
+    } else {
+      scrollbarRef.current.scrollLeft = e.target.scrollLeft;
+    }
+  };
 
   useEffect(() => {
     const getMailsFromServer = async () => {
@@ -113,7 +125,7 @@ const Home = () => {
   }, [refresh]);
 
   useEffect(() => {
-    const socket = io("http://192.168.29.229:4123", {
+    const socket = io("http://192.168.0.103:4123", {
       reconnection: true,
       reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,
@@ -320,7 +332,8 @@ const Home = () => {
       if (
         mails.find(
           (m) =>
-            m.company_name.toLowerCase().trim() == company_name.toLocaleLowerCase().trim()
+            m.company_name.toLowerCase().trim() ==
+            company_name.toLocaleLowerCase().trim()
         )
       ) {
         toast.error("Company already exists");
@@ -511,14 +524,14 @@ const Home = () => {
   };
 
   const handleLogout = async (e) => {
-    try{
+    try {
       setAuth({});
       response = await axiosPrivate.post("/logout");
-    } catch(e) {
+    } catch (e) {
       toast.error("Something went wrong. please try again laster");
       console.log(e);
     }
-  }
+  };
 
   const filteredCompanies = useMemo(() => {
     if (!mails) return [];
@@ -1155,7 +1168,22 @@ const Home = () => {
             />
           </div>
 
-          <div className="overflow-x-auto w-[100%]">
+          {/* Top Scrollbar */}
+          <div
+            ref={scrollbarRef}
+            className="w-full overflow-x-auto scrollbar-thin scrollbar-track-gray-200 scrollbar-thumb-gray-400"
+            onScroll={(e) => handleScroll(e, "top")}
+          >
+            {/* Fake scrollbar track */}
+            <div className="h-4 w-[150%]"></div>
+          </div>
+
+          {/* Company Table */}
+          <div
+            ref={contentRef}
+            onScroll={(e) => handleScroll(e, "content")}
+            className="overflow-x-auto w-[100%]"
+          >
             <table className=" shadow-md sm:rounded-lg p-4 min-w-full table-auto">
               <thead className=" font-semibold text-md">
                 <tr>
@@ -1247,7 +1275,9 @@ const Home = () => {
                               );
                             }}
                           >
-                            <label htmlFor="cname">{row.company_name.toUpperCase()}</label>
+                            <label htmlFor="cname">
+                              {row.company_name.toUpperCase()}
+                            </label>
                           </button>
                         </td>
                         <td>

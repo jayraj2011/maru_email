@@ -49,7 +49,7 @@ const startServer = () => {
   const server = http.createServer(app);
   const io = new Server(server, {
     cors: {
-      origin: "http://192.168.29.229:5173",
+      origin: "http://192.168.0.103:5173",
       transports: ["websocket", "polling"],
     },
     allowEIO3: true,
@@ -62,7 +62,7 @@ const startServer = () => {
   app.use(express.urlencoded({ extended: true }));
   app.use(
     cors({
-      origin: "http://192.168.29.229:5173",
+      origin: "http://192.168.0.103:5173",
       credentials: true,
     })
   );
@@ -514,15 +514,15 @@ const startServer = () => {
 
   app.post("/logout", (req, res) => {
     res.cookie("jwt", "", {
-        httpOnly: true,
-        sameSite: "Lax",
-        secure: false, // Change to true in production (HTTPS)
-        path: "/",
-        expires: new Date(0) // Expire the cookie immediately
+      httpOnly: true,
+      sameSite: "Lax",
+      secure: false, // Change to true in production (HTTPS)
+      path: "/",
+      expires: new Date(0), // Expire the cookie immediately
     });
 
     return res.json({ message: "Logged out successfully" });
-});
+  });
 
   // app.post("/send", upload.array("attachment", 5), async (req, res) => {
   //   try {
@@ -660,7 +660,9 @@ const startServer = () => {
 
   app.get("/getMails", checkJWTToken, async (req, res) => {
     try {
-      const emails = await db.query("SELECT * FROM client_info ORDER_BY company_email ASC");
+      const emails = await db.query(
+        "SELECT * FROM client_info ORDER_BY company_email ASC"
+      );
       res.status(200).json(emails[0]);
     } catch (e) {
       res.status(500).json({
@@ -742,9 +744,7 @@ const startServer = () => {
     console.log(checkCompanyResult);
 
     if (checkCompanyResult.length > 0) {
-      res
-        .status(500)
-        .json({ message: "Company Already exists!" });
+      res.status(500).json({ message: "Company Already exists!" });
     }
 
     // // console.log("company_name", company_name);
@@ -806,7 +806,10 @@ const startServer = () => {
     var query = "UPDATE company SET company_name=? WHERE id=?";
 
     try {
-      const result = await db.query(query, [company_name.toUpperCase(), companyID]);
+      const result = await db.query(query, [
+        company_name.toUpperCase(),
+        companyID,
+      ]);
       io.emit("update_company", company_name);
       res.status(200).json({ message: "Company Name Updated Successfully!" });
     } catch (err) {
@@ -911,9 +914,7 @@ const startServer = () => {
             // let companyCompareName =  + "%";
             const company_check_query =
               "SELECT * FROM company WHERE company_name=?";
-            const [result] = await db.query(company_check_query, [
-              values[1],
-            ]);
+            const [result] = await db.query(company_check_query, [values[1]]);
 
             // // console.log("2");
 
@@ -1026,7 +1027,7 @@ const startServer = () => {
   });
 
   server.listen(4123, () => {
-    // console.log(`Worker ${process.pid} is running on http://localhost:4123`);
+    console.log(`Worker ${process.pid} is running on http://localhost:4123`);
   });
 };
 
