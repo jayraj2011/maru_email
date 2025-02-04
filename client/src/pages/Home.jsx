@@ -22,6 +22,7 @@ import ImageResize from "quill-image-resize-module-react";
 import io from "socket.io-client";
 import useAxiosPrivate from "../hooks/useAxiosPrivate";
 import useAuth from "../hooks/useAuth";
+import Footer from "../components/Footer";
 
 Quill.register("modules/imageResize", ImageResize);
 
@@ -1390,6 +1391,7 @@ const Home = () => {
           </div>
         </div>
       </div>
+      <Footer />
     </>
   );
 };
