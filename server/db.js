@@ -9,4 +9,13 @@ const pool = mysql.createPool({
   queueLimit: 0, // Unlimited queue size
 });
 
+pool.getConnection((err, connection) => {
+  if (err) {
+    console.error("❌ Database connection failed:", err.message);
+  } else {
+    console.log("✅ Database connected successfully!");
+    connection.release(); // Release connection back to pool
+  }
+});
+
 export const db = pool.promise();

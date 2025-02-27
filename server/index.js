@@ -49,7 +49,7 @@ const startServer = () => {
   const server = http.createServer(app);
   const io = new Server(server, {
     cors: {
-      origin: "http://192.168.29.229:5173",
+      origin: "http://192.168.0.103:5173",
       transports: ["websocket", "polling"],
     },
     allowEIO3: true,
@@ -62,7 +62,7 @@ const startServer = () => {
   app.use(express.urlencoded({ extended: true }));
   app.use(
     cors({
-      origin: "http://192.168.29.229:5173",
+      origin: "http://192.168.0.103:5173",
       credentials: true,
     })
   );
@@ -427,12 +427,14 @@ const startServer = () => {
     const [email_response] = await db.query(email_query, [user_email]);
 
     if (email_response.length === 0) {
-      res.status(500).json({ message: "User Email or Password is invalid" });
+      return res
+        .status(401)
+        .json({ message: "User Email or Password is invalid" });
     }
 
     if (email_response[0].password !== user_password) {
-      res
-        .status(500)
+      return res
+        .status(401)
         .json({ message: "User Email or Password is invalid in pass" });
     }
 
@@ -454,17 +456,17 @@ const startServer = () => {
       { expiresIn: "1d" }
     );
 
-    res.cookie("jwt", refreshToken, {
-      httpOnly: true,
-      sameSite: "Lax",
-      secure: false,
-      path: "/",
-      maxAge: 24 * 60 * 60 * 1000,
-    });
-
     // console.log(res);
 
-    return res.json({ accessToken });
+    return res
+      .cookie("jwt", refreshToken, {
+        httpOnly: true,
+        sameSite: "Lax",
+        secure: false,
+        path: "/",
+        maxAge: 24 * 60 * 60 * 1000,
+      })
+      .json({ accessToken });
   });
 
   app.post("/refresh", async (req, res) => {
