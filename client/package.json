@@ -13,6 +13,7 @@
     "autoprefixer": "^10.4.20",
     "axios": "^1.7.9",
     "clsx": "^2.1.1",
+    "dotenv": "^16.4.7",
     "jodit-react": "^4.1.2",
     "lucide-react": "^0.469.0",
     "parchment": "^3.0.0",

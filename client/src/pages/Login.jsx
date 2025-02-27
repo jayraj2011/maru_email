@@ -81,17 +81,19 @@ const Login = () => {
         </p>
         <h1 className="text-[30px]">Sign In</h1>
         <form
+          method="POST"
           onSubmit={handleSubmit}
           className="flex flex-col items-start justify-center gap-3"
         >
-          <label htmlFor="username">Username:</label>
+          <label htmlFor="email">Username:</label>
           <input
             type="text"
-            id="username"
+            id="email"
+            name="email"
             className="w-[350px] h-[50px] border rounded-xl border-black items-center pl-3"
-            placeholder="User Email"
+            placeholder="Enter Email"
             ref={userRef}
-            autoComplete="off"
+            autoComplete="username"
             onChange={(e) => setUser(e.target.value)}
             value={user}
             required
@@ -102,27 +104,25 @@ const Login = () => {
             <input
               type={showPass}
               id="password"
-              placeholder="Password"
+              name="password"
+              placeholder="Enter Password"
               className="w-[300px] h-[45px] items-center pl-3 focus:outline-none"
               onChange={(e) => setPwd(e.target.value)}
               value={pwd}
               required
+              autoComplete="current-password"
             />
             <a className="cursor-pointer" onClick={handleShowOnClick}>
               show
             </a>
           </div>
-          <button className="self-center mt-5 border border-black h-[40px] w-[100px] rounded-xl">
+          <button
+            type="submit"
+            className="self-center mt-5 border border-black h-[40px] w-[100px] rounded-xl"
+          >
             Submit
           </button>
         </form>
-        {/* <p>
-                    Need an Account?<br />
-                    <span className="line"> */}
-        {/*put router link here*/}
-        {/* <a href="#">Sign Up</a>
-                    </span>
-                </p> */}
       </section>
     </div>
   );

@@ -1,13 +1,13 @@
 import axios from "axios";
 
-const apiUrl = import.meta.env.VITE_API_URL;
+const apiUrl = "http://192.168.0.103:4123/";
 
 export default axios.create({
   baseURL: apiUrl,
 });
 
 export const axiosPrivate = axios.create({
-  baseURL: "http://192.168.29.229:4123/",
+  baseURL: apiUrl,
   headers: {
     "Content-Type": "application/json",
   },

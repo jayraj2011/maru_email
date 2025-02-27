@@ -23,6 +23,7 @@ import io from "socket.io-client";
 import useAxiosPrivate from "../hooks/useAxiosPrivate";
 import useAuth from "../hooks/useAuth";
 import Footer from "../components/Footer";
+import axios from "../api/axios";
 
 Quill.register("modules/imageResize", ImageResize);
 
@@ -63,6 +64,35 @@ const dropzone = {
   maxSize: 15 * 1024 * 1024,
 };
 
+const letters = [
+  "A",
+  "B",
+  "C",
+  "D",
+  "E",
+  "F",
+  "G",
+  "H",
+  "I",
+  "J",
+  "K",
+  "L",
+  "M",
+  "N",
+  "O",
+  "P",
+  "Q",
+  "R",
+  "S",
+  "T",
+  "U",
+  "V",
+  "W",
+  "X",
+  "Y",
+  "Z",
+];
+
 const Home = () => {
   const editor = useRef(null);
   const [showemails, setShowEmails] = useState([]);
@@ -97,20 +127,94 @@ const Home = () => {
   const [bulk_export_file, setBulkExportFile] = useState(null);
 
   const { auth, setAuth } = useAuth();
-
   const axiosPrivate = useAxiosPrivate();
-
   const contentRef = useRef(null);
   const scrollbarRef = useRef(null);
 
-  // Sync both scrollbars
-  const handleScroll = (e, type) => {
-    if (type === "top") {
-      contentRef.current.scrollLeft = e.target.scrollLeft;
-    } else {
-      scrollbarRef.current.scrollLeft = e.target.scrollLeft;
-    }
+  const modules = {
+    toolbar: {
+      container: [
+        // Alignment options
+        [{ align: [] }],
+
+        // Font size and font family
+        [{ size: ["small", false, "large", "huge"] }],
+        [{ font: [] }],
+
+        // Text formatting options
+        ["bold", "italic", "underline", "strike"],
+
+        // Blockquote
+        ["blockquote"],
+
+        // Lists and indentation
+        [{ list: "ordered" }, { list: "bullet" }],
+        [{ indent: "-1" }, { indent: "+1" }],
+
+        // Background and text colors
+        [
+          {
+            color: [],
+          },
+          { background: [] },
+        ],
+
+        // Code block
+        ["code-block"],
+
+        // Checklist (tasks)
+        // [{ list: "bullet" }, { list: "ordered" }, { list: "check" }],
+
+        // Additional options (optional)
+        ["clean"], // Removes formatting
+        ["image"],
+      ],
+    },
+    history: {
+      delay: 2000, // How long to delay before saving history
+      maxStack: 500, // Max number of undo states
+    },
+    clipboard: {
+      // toggle to add extra line breaks when pasting HTML:
+      matchVisual: false,
+    },
+    imageResize: {
+      parchment: Quill.import("parchment"),
+      modules: ["Resize", "DisplaySize"],
+    },
   };
+
+  const formats = [
+    // Alignment
+    "align",
+
+    // Font size and font family
+    "size",
+    "font",
+
+    // Text formatting
+    "bold",
+    "italic",
+    "underline",
+    "strike",
+
+    // Blockquote
+    "blockquote",
+
+    // Lists and indentation
+    "list",
+    "bullet",
+    "check",
+    "indent",
+
+    // Background and text colors
+    "color",
+    "background",
+
+    // Code block
+    "code-block",
+    "image",
+  ];
 
   useEffect(() => {
     const getMailsFromServer = async () => {
@@ -126,7 +230,7 @@ const Home = () => {
   }, [refresh]);
 
   useEffect(() => {
-    const socket = io("http://192.168.29.229:4123", {
+    const socket = io("http://192.168.0.103:4123", {
       reconnection: true,
       reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,
@@ -183,91 +287,14 @@ const Home = () => {
     return () => socket.disconnect();
   }, []);
 
-  const modules = {
-    toolbar: {
-      container: [
-        // Alignment options
-        [{ align: [] }],
-
-        // Font size and font family
-        [{ size: ["small", false, "large", "huge"] }],
-        [{ font: [] }],
-
-        // Text formatting options
-        ["bold", "italic", "underline", "strike"],
-
-        // Blockquote
-        ["blockquote"],
-
-        // Lists and indentation
-        [{ list: "ordered" }, { list: "bullet" }],
-        [{ indent: "-1" }, { indent: "+1" }],
-
-        // Background and text colors
-        [
-          {
-            color: [],
-          },
-          { background: [] },
-        ],
-
-        // Code block
-        ["code-block"],
-
-        // Checklist (tasks)
-        // [{ list: "bullet" }, { list: "ordered" }, { list: "check" }],
-
-        // Additional options (optional)
-        ["clean"], // Removes formatting
-        ["image"],
-      ],
-    },
-    history: {
-      delay: 2000, // How long to delay before saving history
-      maxStack: 500, // Max number of undo states
-    },
-    clipboard: {
-      // toggle to add extra line breaks when pasting HTML:
-      matchVisual: false,
-    },
-    imageResize: {
-      parchment: Quill.import("parchment"),
-      modules: ["Resize", "DisplaySize"],
-    },
+  // Sync both scrollbars
+  const handleScroll = (e, type) => {
+    if (type === "top") {
+      contentRef.current.scrollLeft = e.target.scrollLeft;
+    } else {
+      scrollbarRef.current.scrollLeft = e.target.scrollLeft;
+    }
   };
-
-  // Allowed formats: Include font size, underline, and link
-  const formats = [
-    // Alignment
-    "align",
-
-    // Font size and font family
-    "size",
-    "font",
-
-    // Text formatting
-    "bold",
-    "italic",
-    "underline",
-    "strike",
-
-    // Blockquote
-    "blockquote",
-
-    // Lists and indentation
-    "list",
-    "bullet",
-    "check",
-    "indent",
-
-    // Background and text colors
-    "color",
-    "background",
-
-    // Code block
-    "code-block",
-    "image",
-  ];
 
   const handleChange = (value) => {
     setEditorContent(value); // Update the content state
@@ -317,7 +344,7 @@ const Home = () => {
       if (error.code == 400) {
         toast.error("No Email Chosen");
       }
-      console.log("error", error);
+      console.log("error sending mail", error);
       toast.error("Something went wrong. Please try again");
     }
   };
@@ -531,6 +558,15 @@ const Home = () => {
     } catch (e) {
       toast.error("Something went wrong. please try again laster");
       console.log(e);
+    }
+  };
+
+  const handlegetBouncedEmails = async (e) => {
+    try {
+      const res = await axios.get("lastbouncedemails");
+      console.log("bounced emails", res.data);
+    } catch (error) {
+      console.log("bounced email error", error);
     }
   };
 
@@ -1134,13 +1170,59 @@ const Home = () => {
               Send
             </button>
           </header>
-          <button
-            onClick={() => setShowFilterEmail((prev) => !prev)}
-            className="px-4 py-2 my-3 rounded-xl w-fit mt-5 ml-auto flex gap-1 bg-black text-white whitespace-nowrap"
-          >
-            <Filter />
-            search Emails
-          </button>
+          {/* Alphabewtical filter | email filter */}
+          <div className="flex items-center justify-between">
+            {/* Filter alphabeticaly */}
+            <div className="flex flex-col gap-1">
+              <label>Select Letter</label>
+              <select
+                onChange={(e) => {
+                  if (e.target.value == "N/A") {
+                    setRecipients([]);
+                    setAllCompanyEmails([]);
+                  } else {
+                    let c = mails.filter(
+                      (f) =>
+                        f.company_name
+                          .toLowerCase()
+                          .startsWith(e.target.value.toLowerCase()) &&
+                        !allcompanyemails.includes(f.company_name.toLowerCase())
+                    );
+
+                    if (c.length > 0) {
+                      setAllCompanyEmails(
+                        c.map((f) => f.company_name.toString()).flat()
+                      );
+
+                      const rec = c.flatMap(({ company_name, email_ids }) =>
+                        email_ids.map(({ company_email }) => ({
+                          ["name"]: company_name,
+                          ["address"]: company_email,
+                        }))
+                      );
+                      setRecipients(rec);
+                    }
+                  }
+                }}
+              >
+                <option value="null"> N/A</option>
+                {letters.map((l) => (
+                  <option key={l} value={l}>
+                    {l}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {/* Filter by email */}
+            <button
+              onClick={() => setShowFilterEmail((prev) => !prev)}
+              className="px-4 py-2 my-3 rounded-xl w-fit mt-5 ml-auto flex gap-1 bg-black text-white whitespace-nowrap"
+            >
+              <Filter />
+              search Emails
+            </button>
+          </div>
+          {/* Company search */}
           <div className="flex items-center px-2 gap-1 border-2 w-full">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -1168,7 +1250,6 @@ const Home = () => {
               autoCorrect="off"
             />
           </div>
-
           {/* Top Scrollbar */}
           <div
             ref={scrollbarRef}
@@ -1178,7 +1259,6 @@ const Home = () => {
             {/* Fake scrollbar track */}
             <div className="h-4 w-[150%]"></div>
           </div>
-
           {/* Company Table */}
           <div
             ref={contentRef}
@@ -1223,6 +1303,7 @@ const Home = () => {
                   filteredCompanies.map((row, index) => (
                     <React.Fragment key={index}>
                       <tr className={` border-b`}>
+                        {/* Checkbox */}
                         <td className="px-4 py-2">
                           <input
                             type="checkbox"
@@ -1265,6 +1346,7 @@ const Home = () => {
                             className="disabled:cursor-not-allowed h-4 w-4"
                           />
                         </td>
+                        {/* Company name */}
                         <td className="px-4 py-2 whitespace-nowrap text-left">
                           <button
                             onClick={(e) => {
@@ -1281,6 +1363,7 @@ const Home = () => {
                             </label>
                           </button>
                         </td>
+                        {/* Show emails button */}
                         <td>
                           <button
                             onClick={(e) => {
@@ -1299,6 +1382,7 @@ const Home = () => {
                             )}
                           </button>
                         </td>
+                        {/* Edit */}
                         <td>
                           <button
                             onClick={() => {
@@ -1312,6 +1396,7 @@ const Home = () => {
                             <Pen />
                           </button>
                         </td>
+                        {/* Delte */}
                         <td>
                           <button
                             onClick={() => {
@@ -1391,7 +1476,6 @@ const Home = () => {
           </div>
         </div>
       </div>
-      {/* <Footer /> */}
     </>
   );
 };
