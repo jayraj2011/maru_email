@@ -13,7 +13,7 @@ pool.getConnection((err, connection) => {
   if (err) {
     console.error("❌ Database connection failed:", err.message);
   } else {
-    console.log("✅ Database connected successfully!");
+    // console.log("✅ Database connected successfully!");
     connection.release(); // Release connection back to pool
   }
 });

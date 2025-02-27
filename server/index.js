@@ -17,6 +17,7 @@ import cookieParser from "cookie-parser";
 import http from "http";
 import { Server } from "socket.io";
 import xlsx from "xlsx";
+import axios from "../client/src/api/axios.js";
 
 function checkJWTToken(req, res, next) {
   // // console.log(req);
@@ -49,7 +50,7 @@ const startServer = () => {
   const server = http.createServer(app);
   const io = new Server(server, {
     cors: {
-      origin: "http://192.168.29.229:5173",
+      origin: "http://192.168.0.103:5173",
       transports: ["websocket", "polling"],
     },
     allowEIO3: true,
@@ -62,7 +63,7 @@ const startServer = () => {
   app.use(express.urlencoded({ extended: true }));
   app.use(
     cors({
-      origin: "http://192.168.29.229:5173",
+      origin: "http://192.168.0.103:5173",
       credentials: true,
     })
   );
@@ -100,6 +101,9 @@ const startServer = () => {
   });
 
   const upload = multer({ storage });
+  const url = "api.zeptomail.com/";
+  const token =
+    "Zoho-enczapikey wSsVR60l8hT5C/h1njX5JO9szVUEBgn+Ek4r0Af06Xf8T63Apsc5whfIAwbyGqRJGWRpQTREp+h8m0sC02dahth/mwtRCiiF9mqRe1U4J3x17qnvhDzJW2hUmxKILosKxQpqmWBnE80g+g==";
 
   app.use("/uploads", express.static(path.join(__dirname, "filestorage")));
 
@@ -314,17 +318,38 @@ const startServer = () => {
     });
   });
 
+  app.get("/lastbouncedemails", async (req, res) => {
+    try {
+      const response = await axios.get(
+        `https://api.zeptomail.com/v1.1/processed-emails/analytics`,
+        {
+          headers: {
+            Authorization: token,
+            "Content-Type": "application/json",
+          },
+          params: {
+            limit: 1, // Get only 1 email
+            offset: 0, // Start from the latest email
+          },
+        }
+      );
+
+      res.json({
+        lastBouncedEmail: response.data.data[0] || "No bounces found",
+      });
+    } catch (error) {
+      console.log("error", error.message);
+      res.status(404).json({ error: error.response?.data || error.message });
+    }
+  });
+
   app.post(
     "/sends",
     checkJWTToken,
     upload.array("attachment", 5),
-    (req, res) => {
+    async (req, res) => {
       try {
         const { recipients, mailContent, subject } = req.body;
-
-        const url = "api.zeptomail.com/";
-        const token =
-          "Zoho-enczapikey wSsVR60l8hT5C/h1njX5JO9szVUEBgn+Ek4r0Af06Xf8T63Apsc5whfIAwbyGqRJGWRpQTREp+h8m0sC02dahth/mwtRCiiF9mqRe1U4J3x17qnvhDzJW2hUmxKILosKxQpqmWBnE80g+g==";
 
         if (!Array.isArray(recipients) || recipients.length === 0) {
           return res.status(400).json({ message: "Please add Recipients." });
@@ -357,7 +382,7 @@ const startServer = () => {
               })
               .then((resp) => console.log("success"))
               .catch((error) => {
-                // console.log("error", error);
+                console.log("error sending mail", error);
                 return res
                   .status(401)
                   .json(`Email does not exist: ${recipient_object.address}`);
@@ -421,52 +446,56 @@ const startServer = () => {
   );
 
   app.post("/login", async (req, res) => {
-    const { user_email, user_password } = req.body;
+    try {
+      const { user_email, user_password } = req.body;
 
-    var email_query = "SELECT * FROM user_details WHERE user_email=?";
-    const [email_response] = await db.query(email_query, [user_email]);
+      var email_query = "SELECT * FROM user_details WHERE user_email=?";
+      const [email_response] = await db.query(email_query, [user_email]);
 
-    if (email_response.length === 0) {
-      return res
-        .status(401)
-        .json({ message: "User Email or Password is invalid" });
-    }
-
-    if (email_response[0].password !== user_password) {
-      return res
-        .status(401)
-        .json({ message: "User Email or Password is invalid in pass" });
-    }
-
-    const accessToken = jwt.sign(
-      {
-        username: email_response[0].user_email,
-      },
-      process.env.ACCESS_TOKEN_SECRET,
-      {
-        expiresIn: "10m",
+      if (email_response.length === 0) {
+        return res
+          .status(401)
+          .json({ message: "User Email or Password is invalid" });
       }
-    );
 
-    const refreshToken = jwt.sign(
-      {
-        username: email_response[0].user_email,
-      },
-      process.env.REFRESH_TOKEN_SECRET,
-      { expiresIn: "1d" }
-    );
+      if (email_response[0].password !== user_password) {
+        return res
+          .status(401)
+          .json({ message: "User Email or Password is invalid in pass" });
+      }
 
-    // console.log(res);
+      const accessToken = jwt.sign(
+        {
+          username: email_response[0].user_email,
+        },
+        process.env.ACCESS_TOKEN_SECRET,
+        {
+          expiresIn: "10m",
+        }
+      );
 
-    return res
-      .cookie("jwt", refreshToken, {
-        httpOnly: true,
-        sameSite: "Lax",
-        secure: false,
-        path: "/",
-        maxAge: 24 * 60 * 60 * 1000,
-      })
-      .json({ accessToken });
+      const refreshToken = jwt.sign(
+        {
+          username: email_response[0].user_email,
+        },
+        process.env.REFRESH_TOKEN_SECRET,
+        { expiresIn: "1d" }
+      );
+
+      // console.log(res);
+
+      return res
+        .cookie("jwt", refreshToken, {
+          httpOnly: true,
+          sameSite: "Lax",
+          secure: false,
+          path: "/",
+          maxAge: 24 * 60 * 60 * 1000,
+        })
+        .json({ accessToken });
+    } catch (error) {
+      console.log(error);
+    }
   });
 
   app.post("/refresh", async (req, res) => {
@@ -1029,7 +1058,7 @@ const startServer = () => {
   });
 
   server.listen(4123, () => {
-    console.log(`Worker ${process.pid} is running on http://localhost:4123`);
+    // console.log(`Worker ${process.pid} is running on http://localhost:4123`);
   });
 };
 
