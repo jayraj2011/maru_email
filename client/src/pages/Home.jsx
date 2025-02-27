@@ -317,7 +317,7 @@ const Home = () => {
       if (error.code == 400) {
         toast.error("No Email Chosen");
       }
-      // console.log("error", error);
+      console.log("error", error);
       toast.error("Something went wrong. Please try again");
     }
   };

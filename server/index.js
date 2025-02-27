@@ -327,9 +327,7 @@ const startServer = () => {
           "Zoho-enczapikey wSsVR60l8hT5C/h1njX5JO9szVUEBgn+Ek4r0Af06Xf8T63Apsc5whfIAwbyGqRJGWRpQTREp+h8m0sC02dahth/mwtRCiiF9mqRe1U4J3x17qnvhDzJW2hUmxKILosKxQpqmWBnE80g+g==";
 
         if (!Array.isArray(recipients) || recipients.length === 0) {
-          return res
-            .status(400)
-            .json({ message: "Recipients list must be a non-empty array." });
+          return res.status(400).json({ message: "Please add Recipients." });
         }
 
         let Content = juice(mailContent, juiceOptions);
@@ -360,7 +358,9 @@ const startServer = () => {
               .then((resp) => console.log("success"))
               .catch((error) => {
                 // console.log("error", error);
-                res.status(500).json(error);
+                return res
+                  .status(401)
+                  .json(`Email does not exist: ${recipient_object.address}`);
               });
           }
 
