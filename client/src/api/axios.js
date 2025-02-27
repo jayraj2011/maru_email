@@ -7,7 +7,7 @@ export default axios.create({
 });
 
 export const axiosPrivate = axios.create({
-  baseURL: "http://192.168.0.103:4123/",
+  baseURL: "http://192.168.29.229:4123/",
   headers: {
     "Content-Type": "application/json",
   },
